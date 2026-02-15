@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "capital.cocos.app.twa",
+            "sha256_cert_fingerprints": [
+                "48:88:C4:B2:9C:59:0D:04:E9:F3:83:11:EE:C7:8A:5E:8D:C4:CC:A5:55:77:4B:EA:FE:2A:C7:98:EA:B3:88:38"
+            ]
+        }
+    }
+]

@@ -1,0 +1,2 @@
+import{W as d}from"./index-Dh3SBaGN.js";(function(){try{var e=typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},n=new Error().stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="e66407f4-e34d-4e61-a34e-83551d247610",e._sentryDebugIdIdentifier="sentry-dbid-e66407f4-e34d-4e61-a34e-83551d247610")}catch{}})();class i extends d{async requestReview(){throw this.unimplemented("Not implemented on web.")}}export{i as InAppReviewWeb};
+//# sourceMappingURL=web-R0D1KJTj.js.map

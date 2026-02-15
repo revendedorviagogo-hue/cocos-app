@@ -1,0 +1,2 @@
+import{W as s}from"./index-Dh3SBaGN.js";(function(){try{var e=typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},r=new Error().stack;r&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[r]="ff5e40fe-9a30-452e-a640-41e45fd14b3f",e._sentryDebugIdIdentifier="sentry-dbid-ff5e40fe-9a30-452e-a640-41e45fd14b3f")}catch{}})();class f extends s{getStatus(){return Promise.resolve({status:"authorized"})}requestPermission(){return Promise.resolve({status:"authorized"})}}export{f as AppTrackingTransparencyWeb};
+//# sourceMappingURL=web-DtJ97cMw.js.map

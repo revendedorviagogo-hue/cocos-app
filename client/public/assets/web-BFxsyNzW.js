@@ -1,0 +1,2 @@
+import{W as d}from"./index-Dh3SBaGN.js";(function(){try{var e=typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},r=new Error().stack;r&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[r]="2ecfd5a3-7a66-45b2-a2f1-62dd9c1fe675",e._sentryDebugIdIdentifier="sentry-dbid-2ecfd5a3-7a66-45b2-a2f1-62dd9c1fe675")}catch{}})();class f extends d{getReferrerDetails(){return Promise.resolve({})}}export{f as InstallReferrerWeb};
+//# sourceMappingURL=web-BFxsyNzW.js.map

@@ -1,0 +1,92 @@
+{
+  "short_name": "cocos",
+  "name": "Cocos App",
+  "description": "Invertir es para todos!",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/maskable_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "theme_color": "#e9fbfb",
+  "background_color": "#e9fbfb",
+  "display": "fullscreen",
+  "scope": "/",
+  "orientation": "portrait",
+  "shortcuts": [
+    {
+      "name": "login",
+      "url": "/login",
+      "description": "Cocos Login"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot01.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "Login"
+    },
+    {
+      "src": "screenshot02.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "Home"
+    },
+    {
+      "src": "screenshot03.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "DMEP"
+    },
+    {
+      "src": "screenshot04.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "Portafolio"
+    },
+    {
+      "src": "screenshot05.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "Cedears"
+    },
+    {
+      "src": "screenshot06.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "Instrumentos"
+    },
+    {
+      "src": "screenshot07.png",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "platform": "wide",
+      "label": "Acciones"
+    }
+  ]
+}
