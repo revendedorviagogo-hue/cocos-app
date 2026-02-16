@@ -68,3 +68,11 @@
 
 - [x] Adicionar interceptador de erros do Google Tag Manager
 - [x] Limpar console de erros de tracking
+
+
+## 📱 Detecção Mobile (Concluído)
+
+- [x] Adicionar detecção de plataforma (Android/iOS)
+- [x] Habilitar opções específicas de menu mobile
+- [x] Adicionar botões de câmera e compartilhar para apps nativos
+- [x] Badge de plataforma no header (Android/iOS/Mobile Web)
