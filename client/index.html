@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- FORCE NATIVE MODE - DEVE SER O PRIMEIRO SCRIPT -->
-    <script src="/force-native.js"></script>
     <meta charset="utf-8" />
     <link rel="icon" href="favicon.png" />
     <meta
@@ -45,27 +43,6 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Cocos</title>
-    <script>
-      // Suprimir erros do Google Tag Manager
-      window.addEventListener('error', function(e) {
-        if (e.message && e.message.includes('googletagmanager')) {
-          e.preventDefault();
-          return true;
-        }
-      }, true);
-      
-      // Criar stubs para evitar erros
-      if (typeof document !== 'undefined') {
-        const originalWrite = document.write;
-        document.write = function() {
-          try {
-            return originalWrite.apply(this, arguments);
-          } catch (e) {
-            console.warn('GTM write blocked:', e.message);
-          }
-        };
-      }
-    </script>
     <script>
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;

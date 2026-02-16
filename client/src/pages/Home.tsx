@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/_core/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
-import { TrendingUp, Send, Wallet, CreditCard, Settings, LogOut, Camera, Share2, Smartphone } from 'lucide-react';
-import { usePlatformContext } from '@/contexts/PlatformContext';
+import { TrendingUp, Send, Wallet, CreditCard, Settings, LogOut } from 'lucide-react';
 
 /**
  * COCOS APP - DASHBOARD PRINCIPAL
@@ -18,7 +17,6 @@ import { usePlatformContext } from '@/contexts/PlatformContext';
 export default function Home() {
   const { isAuthenticated, user, logout } = useAuth();
   const [, navigate] = useLocation();
-  const platform = usePlatformContext();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -65,21 +63,8 @@ export default function Home() {
       <div className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-indigo-600">Cocos</h1>
-              {platform.isNative && (
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-600 flex items-center gap-1">
-                  <Smartphone className="w-3 h-3" />
-                  {platform.isAndroid ? 'Android' : 'iOS'}
-                </span>
-              )}
-              {platform.isMobile && !platform.isNative && (
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
-                  Mobile Web
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-600">Bem-vindo, {user?.name || 'Usuário'}!</p>
+            <h1 className="text-2xl font-bold text-indigo-600">Cocos</h1>
+            <p className="text-sm text-gray-600">Bem-vindo, {user?.firstName || 'Usuário'}!</p>
           </div>
           <Button
             onClick={handleLogout}
@@ -145,33 +130,6 @@ export default function Home() {
             <CreditCard className="w-6 h-6" />
             <span>Cartão</span>
           </Button>
-
-          {/* Opções Mobile - Somente em apps nativos */}
-          {platform.isNative && (
-            <>
-              <Button
-                onClick={() => {
-                  // TODO: Implementar câmera
-                  alert('Câmera - Disponível em ' + (platform.isAndroid ? 'Android' : 'iOS'));
-                }}
-                className="h-24 flex flex-col items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-2 border-indigo-200"
-              >
-                <Camera className="w-6 h-6" />
-                <span>Câmera</span>
-              </Button>
-
-              <Button
-                onClick={() => {
-                  // TODO: Implementar compartilhar
-                  alert('Compartilhar - Disponível em ' + (platform.isAndroid ? 'Android' : 'iOS'));
-                }}
-                className="h-24 flex flex-col items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-2 border-indigo-200"
-              >
-                <Share2 className="w-6 h-6" />
-                <span>Compartilhar</span>
-              </Button>
-            </>
-          )}
         </div>
 
         {/* Portfólio Resumido */}
