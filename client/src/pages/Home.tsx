@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/_core/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
@@ -64,7 +64,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-indigo-600">Cocos</h1>
-            <p className="text-sm text-gray-600">Bem-vindo, {user?.firstName || 'Usuário'}!</p>
+            <p className="text-sm text-gray-600">Bem-vindo, {user?.name || 'Usuário'}!</p>
           </div>
           <Button
             onClick={handleLogout}

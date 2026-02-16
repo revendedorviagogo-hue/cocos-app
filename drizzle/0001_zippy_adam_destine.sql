@@ -1,0 +1,81 @@
+CREATE TABLE `contacts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`email` varchar(320),
+	`pixKey` varchar(255),
+	`pixKeyType` enum('EMAIL','PHONE','CPF','CNPJ','RANDOM'),
+	`bank` varchar(100),
+	`branch` varchar(20),
+	`account` varchar(50),
+	`isFavorite` int NOT NULL DEFAULT 0,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `contacts_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `pix_keys` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`keyType` enum('EMAIL','PHONE','CPF','CNPJ','RANDOM') NOT NULL,
+	`keyValue` varchar(255) NOT NULL,
+	`isActive` int NOT NULL DEFAULT 1,
+	`isPrimary` int NOT NULL DEFAULT 0,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `pix_keys_id` PRIMARY KEY(`id`),
+	CONSTRAINT `pix_keys_keyValue_unique` UNIQUE(`keyValue`)
+);
+--> statement-breakpoint
+CREATE TABLE `pix_payments` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`paymentId` varchar(100) NOT NULL,
+	`status` enum('PENDING','PENDING_PAYMENT','PROCESSING','COMPLETED','FAILED','EXPIRED') NOT NULL,
+	`amount` varchar(20) NOT NULL,
+	`currency` varchar(10) NOT NULL DEFAULT 'BRL',
+	`pixKey` varchar(255),
+	`pixKeyType` enum('EMAIL','PHONE','CPF','CNPJ','RANDOM'),
+	`qrCode` text,
+	`qrCodeUrl` text,
+	`description` text,
+	`recipientName` varchar(255),
+	`recipientEmail` varchar(320),
+	`transactionId` varchar(100),
+	`confirmationCode` varchar(50),
+	`expiresAt` timestamp,
+	`completedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `pix_payments_id` PRIMARY KEY(`id`),
+	CONSTRAINT `pix_payments_paymentId_unique` UNIQUE(`paymentId`)
+);
+--> statement-breakpoint
+CREATE TABLE `transfers` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`transferId` varchar(100) NOT NULL,
+	`type` enum('PIX','TED','DOC','INTERNAL') NOT NULL,
+	`direction` enum('SENT','RECEIVED') NOT NULL,
+	`status` enum('PENDING','PROCESSING','COMPLETED','FAILED','CANCELLED') NOT NULL,
+	`amount` varchar(20) NOT NULL,
+	`currency` varchar(10) NOT NULL DEFAULT 'BRL',
+	`senderName` varchar(255),
+	`senderEmail` varchar(320),
+	`senderPixKey` varchar(255),
+	`recipientName` varchar(255),
+	`recipientEmail` varchar(320),
+	`recipientPixKey` varchar(255),
+	`recipientBank` varchar(100),
+	`recipientBranch` varchar(20),
+	`recipientAccount` varchar(50),
+	`description` text,
+	`transactionId` varchar(100),
+	`confirmationCode` varchar(50),
+	`scheduledFor` timestamp,
+	`completedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `transfers_id` PRIMARY KEY(`id`),
+	CONSTRAINT `transfers_transferId_unique` UNIQUE(`transferId`)
+);
