@@ -111,3 +111,12 @@
 - [x] Interceptar window.onerror para bloquear erros do GTM
 - [x] Adicionar window.addEventListener('error') com useCapture
 - [x] Bloquear todos os erros do GTM antes de chegarem ao console
+
+
+## 🚫 Remover Mensagem de Atualização (Concluído)
+
+- [x] Analisar script para encontrar verificação de versão
+- [x] Bloquear modal de atualização (createElement interceptado)
+- [x] Desabilitar verificação de versão do app (fetch interceptado)
+- [x] Bloquear alerts de atualização
+- [x] Interceptar textContent para bloquear mensagens

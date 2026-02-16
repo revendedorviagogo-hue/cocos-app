@@ -230,6 +230,66 @@
     return false; // Deixar passar outros erros
   };
   
+  // 13. BLOQUEAR MODAL DE ATUALIZAÇÃO
+  // Interceptar createElement para bloquear modals de atualização
+  const originalCreateElement = document.createElement.bind(document);
+  document.createElement = function(tagName) {
+    const element = originalCreateElement(tagName);
+    
+    // Interceptar textContent para bloquear mensagens de atualização
+    const originalTextContentSetter = Object.getOwnPropertyDescriptor(Element.prototype, 'textContent').set;
+    Object.defineProperty(element, 'textContent', {
+      set: function(value) {
+        if (value && typeof value === 'string') {
+          // Bloquear mensagens de atualização em espanhol
+          if (value.includes('actualización disponible') || 
+              value.includes('Presioná para actualizar') ||
+              value.includes('Actualizar') ||
+              value.includes('nueva versión')) {
+            console.log('[FORCE NATIVE] Bloqueado modal de atualização:', value);
+            return; // Não definir o texto
+          }
+        }
+        originalTextContentSetter.call(this, value);
+      },
+      get: function() {
+        return this.innerText;
+      }
+    });
+    
+    return element;
+  };
+  
+  // 14. BLOQUEAR VERIFICAÇÕES DE VERSÃO
+  // Interceptar fetch/XMLHttpRequest para bloquear chamadas de verificação de versão
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    const url = args[0];
+    if (typeof url === 'string' && (url.includes('version') || url.includes('update'))) {
+      console.log('[FORCE NATIVE] Bloqueada verificação de versão:', url);
+      // Retornar resposta fake dizendo que está atualizado
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ updateAvailable: false, latestVersion: '999.0.0' }),
+        text: () => Promise.resolve(''),
+        status: 200
+      });
+    }
+    return originalFetch.apply(this, args);
+  };
+  
+  // 15. BLOQUEAR DIALOGS/ALERTS DE ATUALIZAÇÃO
+  const originalAlert = window.alert;
+  window.alert = function(message) {
+    if (message && typeof message === 'string') {
+      if (message.includes('actualización') || message.includes('actualizar') || message.includes('update')) {
+        console.log('[FORCE NATIVE] Bloqueado alert de atualização:', message);
+        return;
+      }
+    }
+    return originalAlert.apply(this, arguments);
+  };
+  
   console.log('%c[FORCE NATIVE] ✅ Override COMPLETO!', 'color: #00ff00; font-weight: bold; font-size: 16px;');
   console.log('[FORCE NATIVE] Platform:', forcedPlatform);
   console.log('[FORCE NATIVE] Capacitor.isNativePlatform():', window.Capacitor.isNativePlatform());
