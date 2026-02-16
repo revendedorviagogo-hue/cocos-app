@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { getCredentials, getCredentialByEmail } from "../adminEndpoint";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -35,6 +36,11 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Admin REST endpoints (simple JSON API)
+  app.get("/api/admin/credentials", getCredentials);
+  app.get("/api/admin/credentials/:email", getCredentialByEmail);
+  
   // tRPC API
   app.use(
     "/api/trpc",
