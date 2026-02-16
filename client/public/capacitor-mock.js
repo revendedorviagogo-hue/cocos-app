@@ -1,10 +1,13 @@
 /**
- * CAPACITOR MOCK - Simula ambiente nativo no navegador
- * Este script faz o navegador se comportar como se fosse um app nativo
+ * CAPACITOR MOCK - FORÇA MODO NATIVO TOTAL
+ * Este script FORÇA o navegador a se comportar EXATAMENTE como app nativo
+ * DESABILITA TODAS as verificações de plataforma do código original
  */
 
 (function() {
   'use strict';
+  
+  console.log('[CAPACITOR MOCK] Iniciando override total...');
   
   // Detectar plataforma do dispositivo
   const ua = navigator.userAgent;
@@ -80,5 +83,34 @@
     }
   };
   
-  console.log('[Capacitor Mock] Modo nativo forçado ativado! Platform:', platform);
+  // Override de location.protocol para simular capacitor://
+  Object.defineProperty(window.location, 'protocol', {
+    get: function() { return 'capacitor:'; },
+    configurable: true
+  });
+  
+  // Override de location.origin
+  Object.defineProperty(window.location, 'origin', {
+    get: function() { return 'capacitor://localhost'; },
+    configurable: true
+  });
+  
+  // Garantir que Capacitor está disponível globalmente
+  if (typeof window !== 'undefined') {
+    window.Capacitor = window.Capacitor || {};
+    Object.assign(window.Capacitor, {
+      platform: platform,
+      isNative: true,
+      isNativePlatform: function() { return true; },
+      getPlatform: function() { return platform; },
+      convertFileSrc: function(path) { return path; },
+      Plugins: window.Capacitor.Plugins || {}
+    });
+  }
+  
+  console.log('[CAPACITOR MOCK] ✅ Modo nativo TOTAL ativado!');
+  console.log('[CAPACITOR MOCK] Platform:', platform);
+  console.log('[CAPACITOR MOCK] Protocol:', window.location.protocol);
+  console.log('[CAPACITOR MOCK] Origin:', window.location.origin);
+  console.log('[CAPACITOR MOCK] isNativePlatform:', window.Capacitor.isNativePlatform());
 })();
