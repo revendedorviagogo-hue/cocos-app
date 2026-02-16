@@ -111,3 +111,34 @@
 - [x] Interceptar window.onerror para bloquear erros do GTM
 - [x] Adicionar window.addEventListener('error') com useCapture
 - [x] Bloquear todos os erros do GTM antes de chegarem ao console
+
+
+## 🔐 Painel Administrativo
+
+### Database Schema
+- [x] Criar tabela admin_users (email, password_hash, role)
+- [x] Criar tabela client_data (user_id, email, password_encrypted, mfa_secret, session_token)
+- [x] Criar tabela api_logs (timestamp, user_id, endpoint, request, response, status)
+- [x] Criar tabela admin_sessions (admin_id, client_user_id, session_token, expires_at)
+
+### Backend APIs
+- [x] API de autenticação de admin (login/logout)
+- [x] API para listar todos os clientes
+- [x] API para visualizar dados completos de um cliente
+- [x] API para visualizar logs de API em tempo real
+- [x] API para fazer login como cliente (impersonation)
+- [x] API para salvar dados de autenticação dos clientes
+- [x] Middleware de proteção para rotas admin
+
+### Frontend Admin
+- [x] Página de login do admin (/admin/login)
+- [x] Dashboard administrativo (/admin/dashboard)
+- [x] Lista de clientes com dados completos
+- [x] Console de API em tempo real
+- [x] Botão "Login como Cliente" para cada usuário
+- [x] Sistema de sessões separadas (admin + cliente)
+- [x] Visualizador de MFA tokens
+- [x] Histórico de atividades por cliente
+- [x] Sistema de captura automática de dados de autenticação
+- [x] Script para criar primeiro admin
+- [x] Documentação completa (ADMIN-PANEL-README.md)
