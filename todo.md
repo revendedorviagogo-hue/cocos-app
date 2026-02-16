@@ -76,3 +76,12 @@
 - [x] Habilitar opções específicas de menu mobile
 - [x] Adicionar botões de câmera e compartilhar para apps nativos
 - [x] Badge de plataforma no header (Android/iOS/Mobile Web)
+
+
+## 🔓 Modo Nativo Forçado (Concluído)
+
+- [x] Modificar detecção de plataforma para sempre retornar modo nativo
+- [x] Habilitar todos os botões (Pagar, Dólares, Extraer, etc)
+- [x] Remover restrições de funcionalidades por plataforma
+- [x] Criar capacitor-mock.js para simular ambiente nativo
+- [x] Forçar isNative: true em todos os ambientes

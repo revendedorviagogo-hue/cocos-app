@@ -18,13 +18,21 @@ export interface PlatformInfo {
 }
 
 export function usePlatform() {
+  // MODO NATIVO FORÇADO - Sempre retorna como se estivesse em app nativo
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroidDevice = /Android/i.test(navigator.userAgent);
+  
+  // Forçar modo nativo sempre
+  const forcedPlatform = isIOSDevice ? 'ios' : (isAndroidDevice ? 'android' : 'android');
+  
   const [platformInfo, setPlatformInfo] = useState<PlatformInfo>({
-    isNative: Capacitor.isNativePlatform(),
-    isAndroid: Capacitor.getPlatform() === 'android',
-    isIOS: Capacitor.getPlatform() === 'ios',
-    isWeb: Capacitor.getPlatform() === 'web',
-    isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-    platform: Capacitor.getPlatform() as 'web' | 'ios' | 'android',
+    isNative: true, // SEMPRE NATIVO
+    isAndroid: forcedPlatform === 'android',
+    isIOS: forcedPlatform === 'ios',
+    isWeb: false, // NUNCA WEB
+    isMobile: true, // SEMPRE MOBILE
+    platform: forcedPlatform,
   });
 
   useEffect(() => {
