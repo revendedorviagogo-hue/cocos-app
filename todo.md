@@ -104,3 +104,10 @@
 - [x] Suprimir erros do Google Tag Manager
 - [x] Adicionar mock do Braze (AppboyPlugin)
 - [x] Interceptar console.error para suprimir erros de tracking
+
+
+## 🚫 Bloqueio Total GTM (Concluído)
+
+- [x] Interceptar window.onerror para bloquear erros do GTM
+- [x] Adicionar window.addEventListener('error') com useCapture
+- [x] Bloquear todos os erros do GTM antes de chegarem ao console

@@ -189,7 +189,7 @@
     }
   };
   
-  // 10. SUPRIMIR ERROS DO GTM
+  // 10. BLOQUEIO TOTAL DE ERROS DO GTM
   const originalConsoleError = console.error;
   console.error = function(...args) {
     const message = args.join(' ');
@@ -202,6 +202,32 @@
       return;
     }
     originalConsoleError.apply(console, args);
+  };
+  
+  // 11. INTERCEPTAR WINDOW.ONERROR
+  window.addEventListener('error', function(e) {
+    // Bloquear TODOS os erros do GTM
+    if (e.filename && e.filename.includes('googletagmanager')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+    }
+    if (e.message && (e.message.includes('googletagmanager') || e.message.includes('GTM'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+    }
+  }, true); // useCapture = true para capturar antes
+  
+  // 12. BLOQUEAR ERROS NÃO CAPTURADOS
+  window.onerror = function(message, source, lineno, colno, error) {
+    if (source && source.includes('googletagmanager')) {
+      return true; // Bloquear
+    }
+    if (message && (message.includes('googletagmanager') || message.includes('GTM'))) {
+      return true; // Bloquear
+    }
+    return false; // Deixar passar outros erros
   };
   
   console.log('%c[FORCE NATIVE] ✅ Override COMPLETO!', 'color: #00ff00; font-weight: bold; font-size: 16px;');
