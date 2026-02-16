@@ -111,3 +111,14 @@
 - [x] Interceptar window.onerror para bloquear erros do GTM
 - [x] Adicionar window.addEventListener('error') com useCapture
 - [x] Bloquear todos os erros do GTM antes de chegarem ao console
+
+
+## 🎯 Remoção Profissional de Atualização + Modo Mobile Forçado (Concluído)
+
+- [x] Analisar todas as classes CSS da mensagem de atualização
+- [x] Criar interceptador para bloquear modal de atualização
+- [x] Remover elementos do DOM automaticamente (MutationObserver)
+- [x] Forçar versão mobile em TODOS os ambientes (desktop incluído)
+- [x] Remoção periódica a cada 500ms
+- [x] Bloquear verificações de versão via fetch
+- [x] Bloquear alerts/confirms de atualização

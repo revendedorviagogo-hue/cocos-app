@@ -1,239 +1,355 @@
 /**
- * FORCE NATIVE MODE - OVERRIDE TOTAL
- * Este script DEVE rodar ANTES de qualquer outro código
- * Força TODAS as verificações de plataforma a retornarem "nativo"
+ * FORCE NATIVE MODE + REMOVE UPDATE MODAL
+ * 
+ * Este script força o app a rodar SEMPRE em modo nativo mobile,
+ * mesmo em desktop, e remove COMPLETAMENTE a mensagem de atualização.
  */
 
 (function() {
   'use strict';
   
-  console.log('%c[FORCE NATIVE] 🚀 Iniciando override TOTAL...', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+  console.log('%c[FORCE NATIVE] 🚀 Iniciando override completo...', 'color: #00ff00; font-weight: bold; font-size: 14px;');
   
-  // Detectar plataforma
-  const ua = navigator.userAgent;
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
-  const isAndroid = /Android/i.test(ua);
-  const forcedPlatform = isIOS ? 'ios' : (isAndroid ? 'android' : 'android');
+  // ===================================
+  // 1. FORÇAR MODO MOBILE EM TUDO
+  // ===================================
   
-  // 1. CRIAR CAPACITOR GLOBAL ANTES DE TUDO
-  window.Capacitor = {
+  // Detectar plataforma real
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+  const isAndroid = /android/i.test(userAgent);
+  
+  // SEMPRE forçar mobile, mesmo em desktop
+  const forcedPlatform = isIOS ? 'ios' : 'android';
+  
+  console.log(`[FORCE NATIVE] Plataforma forçada: ${forcedPlatform} (SEMPRE MOBILE)`);
+  
+  // ===================================
+  // 2. CRIAR CAPACITOR MOCK COMPLETO
+  // ===================================
+  
+  window.Capacitor = new Proxy({
     platform: forcedPlatform,
     isNative: true,
-    isNativePlatform: function() { 
-      console.log('[FORCE NATIVE] isNativePlatform() chamado -> retornando TRUE');
-      return true; 
-    },
-    getPlatform: function() { 
-      console.log('[FORCE NATIVE] getPlatform() chamado -> retornando', forcedPlatform);
-      return forcedPlatform; 
-    },
-    convertFileSrc: function(path) { return path; },
+    isNativePlatform: () => true,
+    getPlatform: () => forcedPlatform,
+    convertFileSrc: (path) => path,
     Plugins: {},
-    registerPlugin: function(name, plugin) {
-      this.Plugins[name] = plugin;
-      return plugin;
-    }
-  };
-  
-  // 2. CONGELAR CAPACITOR PARA EVITAR SOBRESCRITA
-  Object.freeze(window.Capacitor.isNativePlatform);
-  Object.freeze(window.Capacitor.getPlatform);
-  
-  // 3. OVERRIDE DE LOCATION (tenta, mas pode falhar em alguns navegadores)
-  try {
-    Object.defineProperty(window.location, 'protocol', {
-      get: function() { return 'capacitor:'; },
-      configurable: false
-    });
-  } catch(e) {
-    console.warn('[FORCE NATIVE] Não foi possível sobrescrever location.protocol:', e.message);
-  }
-  
-  try {
-    Object.defineProperty(window.location, 'origin', {
-      get: function() { return 'capacitor://localhost'; },
-      configurable: false
-    });
-  } catch(e) {
-    console.warn('[FORCE NATIVE] Não foi possível sobrescrever location.origin:', e.message);
-  }
-  
-  // 4. CRIAR PROXY PARA INTERCEPTAR QUALQUER ACESSO A CAPACITOR
-  window.Capacitor = new Proxy(window.Capacitor, {
-    get: function(target, prop) {
-      if (prop === 'isNativePlatform') {
-        return function() { return true; };
-      }
-      if (prop === 'getPlatform') {
-        return function() { return forcedPlatform; };
-      }
-      if (prop === 'isNative') {
-        return true;
-      }
-      if (prop === 'platform') {
-        return forcedPlatform;
-      }
-      return target[prop];
+    registerPlugin: () => ({}),
+  }, {
+    get(target, prop) {
+      if (prop === 'isNativePlatform') return () => true;
+      if (prop === 'getPlatform') return () => forcedPlatform;
+      if (prop === 'platform') return forcedPlatform;
+      if (prop === 'isNative') return true;
+      return target[prop] || (() => Promise.resolve());
     }
   });
   
-  // 5. ADICIONAR PLUGINS MOCK
-  window.Capacitor.Plugins.Device = {
-    getInfo: async function() {
-      return {
-        model: forcedPlatform === 'ios' ? 'iPhone' : 'Android Device',
+  // ===================================
+  // 3. MOCK DE PLUGINS CAPACITOR
+  // ===================================
+  
+  window.Capacitor.Plugins = {
+    Device: {
+      getInfo: () => Promise.resolve({
         platform: forcedPlatform,
+        model: forcedPlatform === 'ios' ? 'iPhone' : 'Android',
         operatingSystem: forcedPlatform,
         osVersion: forcedPlatform === 'ios' ? '15.0' : '12.0',
         manufacturer: forcedPlatform === 'ios' ? 'Apple' : 'Google',
         isVirtual: false,
-        webViewVersion: '100.0'
-      };
-    }
-  };
-  
-  window.Capacitor.Plugins.App = {
-    getInfo: async function() {
-      return {
-        name: 'Cocos',
-        id: 'com.cocos.app',
-        build: '1',
-        version: '1.0.0'
-      };
+        webViewVersion: '100.0.0'
+      }),
+      getId: () => Promise.resolve({ identifier: 'mock-device-id' })
     },
-    addListener: function() {
-      return { remove: function() {} };
+    App: {
+      getInfo: () => Promise.resolve({
+        name: 'Cocos',
+        id: 'capital.cocos.app',
+        build: '999',
+        version: '999.0.0'
+      }),
+      addListener: () => ({ remove: () => {} })
+    },
+    StatusBar: {
+      setStyle: () => Promise.resolve(),
+      setBackgroundColor: () => Promise.resolve(),
+      show: () => Promise.resolve(),
+      hide: () => Promise.resolve()
+    },
+    Keyboard: {
+      addListener: () => ({ remove: () => {} }),
+      show: () => Promise.resolve(),
+      hide: () => Promise.resolve()
+    },
+    Camera: {
+      getPhoto: () => Promise.resolve({ webPath: 'mock-photo.jpg' })
+    },
+    Share: {
+      share: () => Promise.resolve()
+    },
+    Preferences: {
+      get: () => Promise.resolve({ value: null }),
+      set: () => Promise.resolve(),
+      remove: () => Promise.resolve(),
+      clear: () => Promise.resolve()
     }
   };
   
-  window.Capacitor.Plugins.Camera = {
-    getPhoto: async function(options) {
-      console.log('[FORCE NATIVE] Camera.getPhoto chamado');
-      return {
-        dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-        format: 'png'
-      };
-    }
-  };
+  // ===================================
+  // 4. CORDOVA MOCK
+  // ===================================
   
-  window.Capacitor.Plugins.Share = {
-    share: async function(options) {
-      console.log('[FORCE NATIVE] Share.share chamado:', options);
-      return { activityType: 'mock.share' };
-    }
-  };
-  
-  // 6. INTERCEPTAR DOCUMENT.ADDEVENTLISTENER PARA DEVICEREADY
-  const originalAddEventListener = document.addEventListener;
-  document.addEventListener = function(event, handler, options) {
-    if (event === 'deviceready') {
-      console.log('[FORCE NATIVE] deviceready event interceptado - disparando imediatamente');
-      setTimeout(() => handler({ type: 'deviceready' }), 0);
-      return;
-    }
-    return originalAddEventListener.call(this, event, handler, options);
-  };
-  
-  // 7. DISPARAR DEVICEREADY MANUALMENTE
-  setTimeout(() => {
-    const event = new Event('deviceready');
-    document.dispatchEvent(event);
-    console.log('[FORCE NATIVE] deviceready event disparado manualmente');
-  }, 100);
-  
-  // 8. CRIAR CORDOVA MOCK
   window.cordova = {
     platformId: forcedPlatform,
     version: '12.0.0',
     plugins: {
       AppboyPlugin: {
-        changeUser: function(userId, callback) {
-          console.log('[FORCE NATIVE] Braze.changeUser chamado:', userId);
-          if (callback) callback();
-        },
-        logCustomEvent: function(eventName, properties) {
-          console.log('[FORCE NATIVE] Braze.logCustomEvent:', eventName, properties);
-        }
+        changeUser: () => {},
+        logCustomEvent: () => {},
+        setFirstName: () => {},
+        setLastName: () => {},
+        setEmail: () => {}
       }
     },
-    exec: function(success, error, service, action, args) {
-      console.log('[FORCE NATIVE] cordova.exec:', service, action);
-      if (success) success({});
-    }
+    exec: () => {}
   };
   
-  // 9. CRIAR AMPLITUDE/AMPLI MOCK
-  window.amplitude = {
-    getInstance: function() {
-      return {
-        init: function() {},
-        setUserId: function() {},
-        logEvent: function() {},
-        identify: function() {}
-      };
-    }
-  };
+  // ===================================
+  // 5. AMPLITUDE (AMPLI) MOCK
+  // ===================================
   
-  // Mock do Ampli (wrapper do Amplitude)
   window.ampli = {
     isLoaded: true,
-    load: function() {
-      console.log('[FORCE NATIVE] Ampli.load() chamado');
-      this.isLoaded = true;
-    },
-    identify: function() {
-      console.log('[FORCE NATIVE] Ampli.identify() chamado');
-    },
-    track: function() {
-      console.log('[FORCE NATIVE] Ampli.track() chamado');
-    }
+    load: () => Promise.resolve(),
+    identify: () => {},
+    track: () => {},
+    setUserId: () => {},
+    setGroup: () => {}
   };
   
-  // 10. BLOQUEIO TOTAL DE ERROS DO GTM
+  // ===================================
+  // 6. FORÇAR PROTOCOL CAPACITOR
+  // ===================================
+  
+  Object.defineProperty(window.location, 'protocol', {
+    get: () => 'capacitor:',
+    configurable: true
+  });
+  
+  // ===================================
+  // 7. DISPARAR EVENTO DEVICEREADY
+  // ===================================
+  
+  setTimeout(() => {
+    const event = new Event('deviceready');
+    document.dispatchEvent(event);
+    console.log('[FORCE NATIVE] ✅ deviceready disparado');
+  }, 100);
+  
+  // ===================================
+  // 8. REMOVER MENSAGEM DE ATUALIZAÇÃO
+  // ===================================
+  
+  // Lista de classes CSS do modal de atualização
+  const updateModalClasses = [
+    '_backgroundContainer_8bd8n_24',
+    '_bottomSheet_8bd8n_24',
+    '_contentWrapper_yggvz_24',
+    '_buttonWrapper_yggvz_33'
+  ];
+  
+  // Lista de textos a bloquear
+  const updateTexts = [
+    '¡Atención!',
+    'Hay una actualización disponible',
+    'Presioná para actualizar',
+    'Actualizar'
+  ];
+  
+  // Função para remover elementos do DOM
+  function removeUpdateModal() {
+    // Remover por classes
+    updateModalClasses.forEach(className => {
+      const elements = document.querySelectorAll(`.${className}`);
+      elements.forEach(el => {
+        console.log('[FORCE NATIVE] 🗑️ Removendo modal de atualização:', className);
+        el.remove();
+      });
+    });
+    
+    // Remover por texto
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(el => {
+      const text = el.textContent || '';
+      updateTexts.forEach(updateText => {
+        if (text.includes(updateText)) {
+          // Verificar se é o elemento pai do modal
+          if (el.querySelector('svg') || el.querySelector('button')) {
+            console.log('[FORCE NATIVE] 🗑️ Removendo elemento com texto de atualização');
+            el.remove();
+          }
+        }
+      });
+    });
+  }
+  
+  // Executar remoção imediatamente
+  removeUpdateModal();
+  
+  // Executar remoção após carregamento
+  window.addEventListener('load', removeUpdateModal);
+  
+  // Executar remoção periodicamente (a cada 500ms)
+  setInterval(removeUpdateModal, 500);
+  
+  // Observer para detectar novos elementos
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) { // Element node
+          // Verificar se é o modal de atualização
+          const hasUpdateClass = updateModalClasses.some(className => 
+            node.classList && node.classList.contains(className)
+          );
+          
+          if (hasUpdateClass) {
+            console.log('[FORCE NATIVE] 🗑️ Modal de atualização detectado e removido');
+            node.remove();
+          }
+          
+          // Verificar texto
+          const text = node.textContent || '';
+          const hasUpdateText = updateTexts.some(updateText => text.includes(updateText));
+          
+          if (hasUpdateText && (node.querySelector('svg') || node.querySelector('button'))) {
+            console.log('[FORCE NATIVE] 🗑️ Elemento de atualização detectado e removido');
+            node.remove();
+          }
+        }
+      });
+    });
+  });
+  
+  // Observar mudanças no DOM
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+  
+  // ===================================
+  // 9. BLOQUEAR VERIFICAÇÕES DE VERSÃO
+  // ===================================
+  
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    const url = args[0];
+    if (typeof url === 'string' && (url.includes('version') || url.includes('update') || url.includes('actualiz'))) {
+      console.log('[FORCE NATIVE] 🚫 Bloqueada verificação de versão:', url);
+      // Retornar resposta fake dizendo que está atualizado
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ 
+          updateAvailable: false, 
+          latestVersion: '999.0.0',
+          currentVersion: '999.0.0',
+          forceUpdate: false
+        }),
+        text: () => Promise.resolve(''),
+        status: 200
+      });
+    }
+    return originalFetch.apply(this, args);
+  };
+  
+  // ===================================
+  // 10. BLOQUEAR ALERTS/CONFIRMS
+  // ===================================
+  
+  const originalAlert = window.alert;
+  window.alert = function(message) {
+    if (message && typeof message === 'string') {
+      const hasUpdateText = updateTexts.some(text => message.includes(text));
+      if (hasUpdateText) {
+        console.log('[FORCE NATIVE] 🚫 Bloqueado alert de atualização');
+        return;
+      }
+    }
+    return originalAlert.apply(this, arguments);
+  };
+  
+  const originalConfirm = window.confirm;
+  window.confirm = function(message) {
+    if (message && typeof message === 'string') {
+      const hasUpdateText = updateTexts.some(text => message.includes(text));
+      if (hasUpdateText) {
+        console.log('[FORCE NATIVE] 🚫 Bloqueado confirm de atualização');
+        return false;
+      }
+    }
+    return originalConfirm.apply(this, arguments);
+  };
+  
+  // ===================================
+  // 11. SUPRIMIR ERROS DE CONSOLE
+  // ===================================
+  
   const originalConsoleError = console.error;
   console.error = function(...args) {
     const message = args.join(' ');
-    // Suprimir erros do GTM
+    
+    // Bloquear erros do GTM
     if (message.includes('googletagmanager') || message.includes('GTM')) {
       return;
     }
-    // Suprimir erros do Ampli
+    
+    // Bloquear erros do Ampli
     if (message.includes('Ampli is not yet initialized')) {
       return;
     }
-    originalConsoleError.apply(console, args);
+    
+    // Bloquear erros do cordova
+    if (message.includes('cordova is not defined')) {
+      return;
+    }
+    
+    return originalConsoleError.apply(console, args);
   };
   
-  // 11. INTERCEPTAR WINDOW.ONERROR
-  window.addEventListener('error', function(e) {
-    // Bloquear TODOS os erros do GTM
-    if (e.filename && e.filename.includes('googletagmanager')) {
-      e.preventDefault();
-      e.stopPropagation();
-      return true;
-    }
-    if (e.message && (e.message.includes('googletagmanager') || e.message.includes('GTM'))) {
-      e.preventDefault();
-      e.stopPropagation();
-      return true;
-    }
-  }, true); // useCapture = true para capturar antes
+  // ===================================
+  // 12. BLOQUEAR ERROS GLOBAIS
+  // ===================================
   
-  // 12. BLOQUEAR ERROS NÃO CAPTURADOS
+  window.addEventListener('error', (event) => {
+    const message = event.message || '';
+    
+    // Bloquear erros do GTM
+    if (message.includes('googletagmanager') || message.includes('addEventListener')) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+  }, true);
+  
   window.onerror = function(message, source, lineno, colno, error) {
-    if (source && source.includes('googletagmanager')) {
-      return true; // Bloquear
+    if (typeof message === 'string') {
+      // Bloquear erros do GTM
+      if (message.includes('googletagmanager') || message.includes('addEventListener')) {
+        return true; // Prevenir erro
+      }
     }
-    if (message && (message.includes('googletagmanager') || message.includes('GTM'))) {
-      return true; // Bloquear
-    }
-    return false; // Deixar passar outros erros
+    return false;
   };
+  
+  // ===================================
+  // FINALIZAÇÃO
+  // ===================================
   
   console.log('%c[FORCE NATIVE] ✅ Override COMPLETO!', 'color: #00ff00; font-weight: bold; font-size: 16px;');
-  console.log('[FORCE NATIVE] Platform:', forcedPlatform);
+  console.log('[FORCE NATIVE] Platform:', forcedPlatform, '(SEMPRE MOBILE)');
   console.log('[FORCE NATIVE] Capacitor.isNativePlatform():', window.Capacitor.isNativePlatform());
   console.log('[FORCE NATIVE] Capacitor.getPlatform():', window.Capacitor.getPlatform());
-  console.log('[FORCE NATIVE] Location protocol:', window.location.protocol);
+  console.log('[FORCE NATIVE] Modal de atualização: REMOVIDO');
   
 })();
