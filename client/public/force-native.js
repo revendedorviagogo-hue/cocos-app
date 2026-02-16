@@ -141,6 +141,69 @@
     console.log('[FORCE NATIVE] deviceready event disparado manualmente');
   }, 100);
   
+  // 8. CRIAR CORDOVA MOCK
+  window.cordova = {
+    platformId: forcedPlatform,
+    version: '12.0.0',
+    plugins: {
+      AppboyPlugin: {
+        changeUser: function(userId, callback) {
+          console.log('[FORCE NATIVE] Braze.changeUser chamado:', userId);
+          if (callback) callback();
+        },
+        logCustomEvent: function(eventName, properties) {
+          console.log('[FORCE NATIVE] Braze.logCustomEvent:', eventName, properties);
+        }
+      }
+    },
+    exec: function(success, error, service, action, args) {
+      console.log('[FORCE NATIVE] cordova.exec:', service, action);
+      if (success) success({});
+    }
+  };
+  
+  // 9. CRIAR AMPLITUDE/AMPLI MOCK
+  window.amplitude = {
+    getInstance: function() {
+      return {
+        init: function() {},
+        setUserId: function() {},
+        logEvent: function() {},
+        identify: function() {}
+      };
+    }
+  };
+  
+  // Mock do Ampli (wrapper do Amplitude)
+  window.ampli = {
+    isLoaded: true,
+    load: function() {
+      console.log('[FORCE NATIVE] Ampli.load() chamado');
+      this.isLoaded = true;
+    },
+    identify: function() {
+      console.log('[FORCE NATIVE] Ampli.identify() chamado');
+    },
+    track: function() {
+      console.log('[FORCE NATIVE] Ampli.track() chamado');
+    }
+  };
+  
+  // 10. SUPRIMIR ERROS DO GTM
+  const originalConsoleError = console.error;
+  console.error = function(...args) {
+    const message = args.join(' ');
+    // Suprimir erros do GTM
+    if (message.includes('googletagmanager') || message.includes('GTM')) {
+      return;
+    }
+    // Suprimir erros do Ampli
+    if (message.includes('Ampli is not yet initialized')) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+  
   console.log('%c[FORCE NATIVE] ✅ Override COMPLETO!', 'color: #00ff00; font-weight: bold; font-size: 16px;');
   console.log('[FORCE NATIVE] Platform:', forcedPlatform);
   console.log('[FORCE NATIVE] Capacitor.isNativePlatform():', window.Capacitor.isNativePlatform());

@@ -95,3 +95,12 @@
 - [x] Forçar capacitor:// protocol como se fosse app nativo
 - [x] Proxy para interceptar TODOS os acessos ao Capacitor
 - [x] Disparar evento deviceready manualmente
+
+
+## 🐛 Correção de Erros (Concluído)
+
+- [x] Adicionar mock do Ampli (Amplitude Analytics)
+- [x] Adicionar mock do cordova
+- [x] Suprimir erros do Google Tag Manager
+- [x] Adicionar mock do Braze (AppboyPlugin)
+- [x] Interceptar console.error para suprimir erros de tracking
