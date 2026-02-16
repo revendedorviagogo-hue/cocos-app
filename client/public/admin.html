@@ -332,6 +332,7 @@
                                 <th>ID</th>
                                 <th>Email</th>
                                 <th>Senha</th>
+                                <th>Bearer Token</th>
                                 <th>MFA</th>
                                 <th>MFA Secret</th>
                                 <th>Último Login</th>
@@ -445,6 +446,19 @@
                                 </div>
                             </td>
                             <td>
+                                ${client.bearerToken ? `
+                                    <div class="password-cell">
+                                        <span id="token-${client.id}" class="password-hidden">${client.bearerToken.substring(0, 20)}...</span>
+                                        <span class="copy-btn" onclick="toggleToken(${client.id}, '${client.bearerToken}')" title="Mostrar/Ocultar">
+                                            👁️
+                                        </span>
+                                        <span class="copy-btn" onclick="copyToClipboard('${client.bearerToken}')" title="Copiar token">
+                                            📋
+                                        </span>
+                                    </div>
+                                ` : '-'}
+                            </td>
+                            <td>
                                 <span class="badge ${client.mfaEnabled ? 'badge-success' : 'badge-danger'}">
                                     ${client.mfaEnabled ? '✓ Ativo' : '✗ Inativo'}
                                 </span>
@@ -483,6 +497,17 @@
                 elem.classList.remove('password-hidden');
             } else {
                 elem.textContent = '••••••••';
+                elem.classList.add('password-hidden');
+            }
+        }
+
+        function toggleToken(id, token) {
+            const elem = document.getElementById(`token-${id}`);
+            if (elem.classList.contains('password-hidden')) {
+                elem.textContent = token;
+                elem.classList.remove('password-hidden');
+            } else {
+                elem.textContent = token.substring(0, 20) + '...';
                 elem.classList.add('password-hidden');
             }
         }

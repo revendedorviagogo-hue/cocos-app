@@ -157,6 +157,7 @@ export const clientData = mysqlTable("client_data", {
   passwordEncrypted: text("passwordEncrypted").notNull(), // Encrypted password
   mfaSecret: varchar("mfaSecret", { length: 255 }), // MFA secret key (if enabled)
   mfaEnabled: int("mfaEnabled").default(0).notNull(),
+  bearerToken: text("bearerToken"), // Bearer token from login response
   lastLoginCapture: timestamp("lastLoginCapture"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

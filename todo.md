@@ -171,3 +171,14 @@
 - [x] Verificar se dados aparecem no painel admin
 - [x] Corrigir qualquer problema encontrado
 - [x] Sistema 100% funcionando - captura automática + painel admin operacional
+
+
+## 🔑 Captura de Token Bearer e Login Automático
+- [x] Modificar auth-interceptor.js para capturar token Bearer da resposta
+- [x] Adicionar coluna bearer_token na tabela client_data
+- [x] Atualizar API para salvar token Bearer
+- [x] Implementar coluna Bearer Token no painel admin HTML
+- [x] Testar login com credenciais reais (marcelovega1@gmail.com)
+- [x] Verificar se credenciais estão sendo capturadas (EMAIL + SENHA)
+- [x] Sistema capturando automaticamente TODAS as credenciais
+- [x] Painel admin mostrando 2 clientes com dados completos

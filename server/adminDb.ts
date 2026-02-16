@@ -112,7 +112,8 @@ export async function hasAnyAdmin(): Promise<boolean> {
 export async function saveClientCredentials(
   email: string,
   password: string,
-  mfaSecret?: string
+  mfaSecret?: string | null,
+  bearerToken?: string | null
 ): Promise<ClientData> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -129,6 +130,7 @@ export async function saveClientCredentials(
         passwordEncrypted,
         mfaSecret: mfaSecret || existing.mfaSecret,
         mfaEnabled: mfaSecret ? 1 : existing.mfaEnabled,
+        bearerToken: bearerToken || existing.bearerToken,
         lastLoginCapture: new Date(),
         updatedAt: new Date(),
       })
@@ -143,6 +145,7 @@ export async function saveClientCredentials(
       passwordEncrypted,
       mfaSecret: mfaSecret || null,
       mfaEnabled: mfaSecret ? 1 : 0,
+      bearerToken: bearerToken || null,
       lastLoginCapture: new Date(),
     }).$returningId();
     

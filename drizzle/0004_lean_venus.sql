@@ -1,0 +1,1 @@
+ALTER TABLE `client_data` ADD `bearerToken` text;
