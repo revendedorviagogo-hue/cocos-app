@@ -1,48 +1,33 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useLocation } from 'wouter';
+import { TrendingUp, Send, Wallet, CreditCard, Settings, LogOut } from 'lucide-react';
 
 /**
- * COCOS APP - PLATAFORMA DE INVESTIMENTOS COMPLETA
+ * COCOS APP - DASHBOARD PRINCIPAL
  * 
- * Esta página carrega a aplicação Cocos original compilada com TODAS as funcionalidades:
- * - Login e autenticação
- * - Portfólio de investimentos
- * - Mercado (ações, ETFs, fundos)
- * - Criptografia
- * - Cartão de débito
- * - PIX e transferências
- * - Gráficos avançados (Charting Library)
- * - PWA com suporte offline
- * 
- * Todos os assets (JS, CSS, Charting Library) estão em /public/assets/
- * A aplicação é uma PWA completa com suporte offline.
+ * Esta página exibe o dashboard com:
+ * - Saldo total e ganhos
+ * - Portfólio resumido
+ * - Ações rápidas (PIX, Transferências, etc)
+ * - Menu de navegação
  */
 export default function Home() {
-  const { isAuthenticated } = useAuth();
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
-  const linkRef = useRef<HTMLLinkElement | null>(null);
+  const { isAuthenticated, user, logout } = useAuth();
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     if (!isAuthenticated) {
+      navigate('/login');
       return;
     }
 
-    // Carregar o script principal da aplicação Cocos
-    const script = document.createElement('script');
-    script.src = '/assets/index-Dh3SBaGN.js';
-    script.type = 'module';
-    script.crossOrigin = 'anonymous';
-    script.async = true;
-    document.body.appendChild(script);
-    scriptRef.current = script;
-
-    // Carregar o CSS principal
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/assets/index-CGdD2EAY.css';
-    link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
-    linkRef.current = link;
+    // Registrar Facebook Pixel
+    if ((window as any).fbq) {
+      (window as any).fbq('track', 'PageView');
+    }
 
     // Registrar o Service Worker se disponível
     if ('serviceWorker' in navigator) {
@@ -55,22 +40,12 @@ export default function Home() {
           console.log('Service Worker registration failed:', err);
         });
     }
+  }, [isAuthenticated, navigate]);
 
-    // Registrar Facebook Pixel
-    if ((window as any).fbq) {
-      (window as any).fbq('track', 'PageView');
-    }
-
-    return () => {
-      // Cleanup
-      if (scriptRef.current?.parentNode) {
-        scriptRef.current.parentNode.removeChild(scriptRef.current);
-      }
-      if (linkRef.current?.parentNode) {
-        linkRef.current.parentNode.removeChild(linkRef.current);
-      }
-    };
-  }, [isAuthenticated]);
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   if (!isAuthenticated) {
     return (
@@ -83,8 +58,152 @@ export default function Home() {
   }
 
   return (
-    <div id="cocos-app" style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
-      {/* A aplicação Cocos será renderizada aqui */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-indigo-600">Cocos</h1>
+            <p className="text-sm text-gray-600">Bem-vindo, {user?.firstName || 'Usuário'}!</p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Saldo */}
+        <Card className="p-8 mb-8 bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+          <div className="mb-4">
+            <p className="text-indigo-100 text-sm font-medium">Saldo Total</p>
+            <h2 className="text-4xl font-bold mt-2">R$ 15.250,50</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <div>
+              <p className="text-indigo-100 text-sm">Disponível</p>
+              <p className="text-xl font-semibold mt-1">R$ 12.500,00</p>
+            </div>
+            <div>
+              <p className="text-indigo-100 text-sm">Investido</p>
+              <p className="text-xl font-semibold mt-1">R$ 2.750,50</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Ações Rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Button
+            onClick={() => navigate('/pix')}
+            className="h-24 flex flex-col items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-2 border-indigo-200"
+          >
+            <Send className="w-6 h-6" />
+            <span>PIX</span>
+          </Button>
+
+          <Button
+            onClick={() => navigate('/portfolio')}
+            className="h-24 flex flex-col items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-2 border-indigo-200"
+          >
+            <Wallet className="w-6 h-6" />
+            <span>Portfólio</span>
+          </Button>
+
+          <Button
+            onClick={() => navigate('/market')}
+            className="h-24 flex flex-col items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-2 border-indigo-200"
+          >
+            <TrendingUp className="w-6 h-6" />
+            <span>Mercado</span>
+          </Button>
+
+          <Button
+            onClick={() => navigate('/card')}
+            className="h-24 flex flex-col items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-2 border-indigo-200"
+          >
+            <CreditCard className="w-6 h-6" />
+            <span>Cartão</span>
+          </Button>
+        </div>
+
+        {/* Portfólio Resumido */}
+        <Card className="p-6 mb-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-indigo-600" />
+            Meu Portfólio
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-semibold text-gray-800">PETR4</p>
+                <p className="text-sm text-gray-600">Petrobras - 100 ações</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-gray-800">R$ 2.875,00</p>
+                <p className="text-sm text-green-600">+12,76%</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-semibold text-gray-800">BTC</p>
+                <p className="text-sm text-gray-600">Bitcoin - 0.05 BTC</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-gray-800">R$ 4.750,00</p>
+                <p className="text-sm text-green-600">+8,32%</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-semibold text-gray-800">ETH</p>
+                <p className="text-sm text-gray-600">Ethereum - 0.5 ETH</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-gray-800">R$ 1.750,00</p>
+                <p className="text-sm text-green-600">+5,12%</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Transações Recentes */}
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Transações Recentes</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 border-b">
+              <div>
+                <p className="font-semibold text-gray-800">Depósito via PIX</p>
+                <p className="text-sm text-gray-600">15 de fevereiro</p>
+              </div>
+              <p className="font-semibold text-green-600">+R$ 1.000,00</p>
+            </div>
+
+            <div className="flex items-center justify-between p-3 border-b">
+              <div>
+                <p className="font-semibold text-gray-800">Compra PETR4</p>
+                <p className="text-sm text-gray-600">14 de fevereiro</p>
+              </div>
+              <p className="font-semibold text-red-600">-R$ 500,00</p>
+            </div>
+
+            <div className="flex items-center justify-between p-3">
+              <div>
+                <p className="font-semibold text-gray-800">Transferência para João</p>
+                <p className="text-sm text-gray-600">13 de fevereiro</p>
+              </div>
+              <p className="font-semibold text-red-600">-R$ 250,00</p>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
