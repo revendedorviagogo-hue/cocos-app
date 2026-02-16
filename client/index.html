@@ -44,6 +44,27 @@
     />
     <title>Cocos</title>
     <script>
+      // Suprimir erros do Google Tag Manager
+      window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes('googletagmanager')) {
+          e.preventDefault();
+          return true;
+        }
+      }, true);
+      
+      // Criar stubs para evitar erros
+      if (typeof document !== 'undefined') {
+        const originalWrite = document.write;
+        document.write = function() {
+          try {
+            return originalWrite.apply(this, arguments);
+          } catch (e) {
+            console.warn('GTM write blocked:', e.message);
+          }
+        };
+      }
+    </script>
+    <script>
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;
         n = f.fbq = function () {

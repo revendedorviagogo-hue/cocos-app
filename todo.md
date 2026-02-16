@@ -63,3 +63,8 @@
 - [ ] Limites de transferência
 - [ ] Verificação de identidade (KYC)
 - [ ] Auditoria de transações
+
+## 🔧 Correções Concluídas
+
+- [x] Adicionar interceptador de erros do Google Tag Manager
+- [x] Limpar console de erros de tracking
