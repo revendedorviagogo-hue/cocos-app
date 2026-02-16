@@ -152,3 +152,12 @@
 - [x] Remover console de API do dashboard
 - [x] Criar endpoint REST simples para visualizar credenciais
 - [x] Atualizar documentação
+
+
+## 🔴 CORREÇÕES URGENTES - Painel Admin
+- [x] Testar se auth-interceptor.js está capturando logins
+- [x] Verificar se dados estão sendo salvos no banco
+- [x] Criar página HTML completa de admin (não apenas JSON)
+- [x] Interface visual profissional para operador
+- [x] Garantir que salva TUDO independente de MFA
+- [ ] Testar login completo e verificar dados no admin (PRONTO PARA TESTE)
