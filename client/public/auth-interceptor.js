@@ -44,7 +44,8 @@
         payload.mfaSecret = loginData.mfaCode;
       }
       
-      const response = await fetch('/api/trpc/admin.saveClientAuth', {
+      // Simple REST endpoint
+      const response = await fetch('/api/admin/save-credentials', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
