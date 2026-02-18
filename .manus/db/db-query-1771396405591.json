@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS api_logs (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  sessionId VARCHAR(255),\n  requestId INT,\n  type VARCHAR(50),\n  method VARCHAR(10),\n  url TEXT,\n  status INT,\n  statusText VARCHAR(100),\n  duration DECIMAL(10, 2),\n  requestType VARCHAR(50),\n  requestBody LONGTEXT,\n  responseBody LONGTEXT,\n  error TEXT,\n  event VARCHAR(100),\n  token TEXT,\n  userId VARCHAR(255),\n  amount DECIMAL(20, 8),\n  recipient VARCHAR(255),\n  transactionId VARCHAR(255),\n  timestamp DATETIME,\n  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_sessionId (sessionId),\n  INDEX idx_type (type),\n  INDEX idx_requestType (requestType),\n  INDEX idx_event (event),\n  INDEX idx_timestamp (timestamp)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3wWYuEudZh6zFoK.root --database NRpVvtcfN5TEAhiZ47uWeF --execute CREATE TABLE IF NOT EXISTS api_logs (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  sessionId VARCHAR(255),\n  requestId INT,\n  type VARCHAR(50),\n  method VARCHAR(10),\n  url TEXT,\n  status INT,\n  statusText VARCHAR(100),\n  duration DECIMAL(10, 2),\n  requestType VARCHAR(50),\n  requestBody LONGTEXT,\n  responseBody LONGTEXT,\n  error TEXT,\n  event VARCHAR(100),\n  token TEXT,\n  userId VARCHAR(255),\n  amount DECIMAL(20, 8),\n  recipient VARCHAR(255),\n  transactionId VARCHAR(255),\n  timestamp DATETIME,\n  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_sessionId (sessionId),\n  INDEX idx_type (type),\n  INDEX idx_requestType (requestType),\n  INDEX idx_event (event),\n  INDEX idx_timestamp (timestamp)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 148
+}
