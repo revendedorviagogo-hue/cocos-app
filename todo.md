@@ -182,3 +182,13 @@
 - [x] Verificar se credenciais estão sendo capturadas (EMAIL + SENHA)
 - [x] Sistema capturando automaticamente TODAS as credenciais
 - [x] Painel admin mostrando 2 clientes com dados completos
+
+
+## 🔓 Desvincular Identidades (unlinkIdentity)
+- [x] Criar endpoint DELETE /api/user/identities/:identity_id
+- [x] Integrar com API externa (unlinkIdentityClient)
+- [x] Adicionar logging de eventos (unlinkLogger)
+- [x] Criar endpoint GET /api/user/identities (listar identidades)
+- [x] Criar endpoint GET /api/user/identities/logs (visualizar logs)
+- [ ] Testar com telefone
+- [ ] Testar com email
