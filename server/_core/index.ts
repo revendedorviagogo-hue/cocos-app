@@ -3,10 +3,10 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-// import { registerOAuthRoutes } from "./oauth"; // REMOVIDO: Manus OAuth desativado
+import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-// import { getCredentials, getCredentialByEmail } from "../adminEndpoint"; // REMOVIDO
+import { getCredentials, getCredentialByEmail } from "../adminEndpoint";
 import { serveStatic, setupVite } from "./vite";
 import unlinkIdentityRouter from "../unlinkIdentity";
 
@@ -35,13 +35,12 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  // OAuth callback under /api/oauth/callback - REMOVIDO
-  // registerOAuthRoutes(app);
+  // OAuth callback under /api/oauth/callback
+  registerOAuthRoutes(app);
   
   // Admin REST endpoints (simple JSON API)
-  // NOTA: Endpoints de admin removidos - use /admin.html para acessar
-  // app.get("/api/admin/credentials", getCredentials);
-  // app.get("/api/admin/credentials/:email", getCredentialByEmail);
+  app.get("/api/admin/credentials", getCredentials);
+  app.get("/api/admin/credentials/:email", getCredentialByEmail);
   
   // Unlink Identity endpoints
   app.use("/api", unlinkIdentityRouter);

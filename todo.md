@@ -194,8 +194,8 @@
 - [ ] Testar com email
 
 ## 🔐 Remover Manus OAuth e Forçar Android Nativo
-- [x] Remover autenticação Manus OAuth do app (COMPLETO - OAuth routes desativadas)
-- [x] Remover login com Manus (COMPLETO - const.ts atualizado)
+- [x] Remover autenticação Manus OAuth do app
+- [x] Remover login com Manus
 - [x] Forçar detecção como Android em TODOS os ambientes
 - [x] Forçar modo mobile mesmo em desktop
 - [x] Adicionar botão "Desvincular Identidades" no menu de Seguridad
