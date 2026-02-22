@@ -8,7 +8,21 @@
       content="Invertir es para todos!"
     />
     <meta name="theme-color" content="#e9fbfb" />
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cocos" />
     <link rel="apple-touch-icon" href="logo-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="logo-192.png" />
+    <!-- Android Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Cocos" />
+    <!-- Windows Meta Tags -->
+    <meta name="msapplication-TileColor" content="#e9fbfb" />
+    <meta name="msapplication-TileImage" content="logo-512.png" />
+    <!-- General Meta Tags -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="format-detection" content="email=no" />
     <link rel="assetlinks.json" href=".well-known/assetlinks.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -38,11 +52,22 @@
       crossorigin="anonymous"
     />
     <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="/pwa-native.css" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Cocos</title>
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[PWA] Service Worker registrado:', reg))
+            .catch(err => console.error('[PWA] Erro ao registrar SW:', err));
+        });
+      }
+    </script>
     <script>
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;
