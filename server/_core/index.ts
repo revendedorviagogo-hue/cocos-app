@@ -6,7 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // import { registerOAuthRoutes } from "./oauth"; // REMOVIDO: Manus OAuth desativado
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { getCredentials, getCredentialByEmail } from "../adminEndpoint";
+// import { getCredentials, getCredentialByEmail } from "../adminEndpoint"; // REMOVIDO
 import { serveStatic, setupVite } from "./vite";
 import unlinkIdentityRouter from "../unlinkIdentity";
 
