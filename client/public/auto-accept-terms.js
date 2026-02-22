@@ -3,12 +3,13 @@
  * 
  * Ativa automaticamente o botão de aceitar termos
  * Permite clicar sem precisar rolar
+ * SEM quebrar scripts de terceiros
  */
 
 (function() {
   'use strict';
   
-  console.log('%c[Auto Accept Terms] 📋 Ativando botão de termos...', 'color: #0066cc; font-weight: bold; font-size: 14px;');
+  console.log('[Auto Accept Terms] 📋 Ativando botão de termos...');
   
   // 1. Encontrar e ativar o botão de aceitar
   function activateTermsButton() {
@@ -31,45 +32,27 @@
             btn.style.visibility = 'visible';
             btn.style.pointerEvents = 'auto';
             btn.style.opacity = '1';
-            
-            console.log('[Auto Accept Terms] ✅ Botão ativado:', text);
           }
         } catch (e) {
-          // Ignorar erros
+          // Ignorar erros individuais
         }
       });
     } catch (e) {
-      console.warn('[Auto Accept Terms] Erro ao ativar botão:', e.message);
+      // Ignorar erros
     }
   }
   
-  // 2. Interceptar setAttribute para disabled
-  const originalSetAttribute = Element.prototype.setAttribute;
-  Element.prototype.setAttribute = function(name, value) {
-    if (name === 'disabled') {
-      const text = this.textContent.toLowerCase();
-      if (text.includes('ingresar') || text.includes('aceptar') || text.includes('continuar')) {
-        console.log('[Auto Accept Terms] Bloqueio de disabled detectado, removendo...');
-        return; // Não aplicar disabled
-      }
-    }
-    return originalSetAttribute.call(this, name, value);
-  };
-  
-  // 3. MutationObserver para monitorar mudanças
+  // 2. MutationObserver para monitorar mudanças (mais seguro)
   const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       try {
-        if (mutation.type === 'attributes') {
+        if (mutation.type === 'attributes' && mutation.target.tagName === 'BUTTON') {
           const element = mutation.target;
-          if (element.tagName === 'BUTTON') {
-            const text = element.textContent.toLowerCase();
-            if (text.includes('ingresar') || text.includes('aceptar') || text.includes('continuar')) {
-              if (element.disabled || element.getAttribute('disabled')) {
-                element.disabled = false;
-                element.removeAttribute('disabled');
-                console.log('[Auto Accept Terms] Botão reativado após mudança');
-              }
+          const text = element.textContent.toLowerCase();
+          if (text.includes('ingresar') || text.includes('aceptar') || text.includes('continuar')) {
+            if (element.disabled || element.getAttribute('disabled')) {
+              element.disabled = false;
+              element.removeAttribute('disabled');
             }
           }
         }
@@ -79,29 +62,37 @@
     });
   });
   
-  // 4. Iniciar observação
+  // 3. Iniciar observação
   function startObserver() {
-    if (document.body) {
-      observer.observe(document.body, {
-        attributes: true,
-        subtree: true,
-        attributeFilter: ['disabled', 'class', 'style']
-      });
-      console.log('[Auto Accept Terms] MutationObserver ativo');
-    } else {
-      setTimeout(startObserver, 10);
+    try {
+      if (document.body) {
+        observer.observe(document.body, {
+          attributes: true,
+          subtree: true,
+          attributeFilter: ['disabled', 'class', 'style']
+        });
+        console.log('[Auto Accept Terms] MutationObserver ativo');
+      } else {
+        setTimeout(startObserver, 10);
+      }
+    } catch (e) {
+      // Ignorar erros
     }
   }
   
-  // 5. Ativar botão a cada 200ms
+  // 4. Ativar botão a cada 500ms (menos frequente)
   setInterval(function() {
-    activateTermsButton();
-  }, 200);
+    try {
+      activateTermsButton();
+    } catch (e) {
+      // Ignorar erros
+    }
+  }, 500);
   
   // Iniciar
   activateTermsButton();
   startObserver();
   
-  console.log('%c[Auto Accept Terms] ✅ Botão de termos sempre ativo!', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+  console.log('[Auto Accept Terms] ✅ Botão de termos sempre ativo!');
   
 })();

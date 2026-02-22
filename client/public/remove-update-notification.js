@@ -2,6 +2,7 @@
  * REMOVE UPDATE NOTIFICATION - VERSÃO SEGURA
  * 
  * Remove COMPLETAMENTE a mensagem de atualização com validações seguras
+ * SEM quebrar scripts de terceiros como Google Tag Manager
  */
 
 (function() {
@@ -35,67 +36,7 @@
     }
   }
   
-  // Interceptar appendChild ANTES do React criar o modal
-  const originalAppendChild = Element.prototype.appendChild;
-  Element.prototype.appendChild = function(child) {
-    try {
-      if (child && (isSuspiciousText(child) || isSuspiciousClass(child))) {
-        console.log('[Remove Update] BLOQUEADO appendChild!');
-        return child;
-      }
-    } catch (e) {
-      console.warn('[Remove Update] Erro em appendChild:', e.message);
-    }
-    
-    try {
-      return originalAppendChild.call(this, child);
-    } catch (e) {
-      console.warn('[Remove Update] Erro ao chamar appendChild:', e.message);
-      return child;
-    }
-  };
-  
-  // Interceptar insertBefore
-  const originalInsertBefore = Element.prototype.insertBefore;
-  Element.prototype.insertBefore = function(newNode, referenceNode) {
-    try {
-      if (newNode && (isSuspiciousText(newNode) || isSuspiciousClass(newNode))) {
-        console.log('[Remove Update] BLOQUEADO insertBefore!');
-        return newNode;
-      }
-    } catch (e) {
-      console.warn('[Remove Update] Erro em insertBefore:', e.message);
-    }
-    
-    try {
-      return originalInsertBefore.call(this, newNode, referenceNode);
-    } catch (e) {
-      console.warn('[Remove Update] Erro ao chamar insertBefore:', e.message);
-      return newNode;
-    }
-  };
-  
-  // Interceptar replaceChild
-  const originalReplaceChild = Element.prototype.replaceChild;
-  Element.prototype.replaceChild = function(newChild, oldChild) {
-    try {
-      if (newChild && (isSuspiciousText(newChild) || isSuspiciousClass(newChild))) {
-        console.log('[Remove Update] BLOQUEADO replaceChild!');
-        return oldChild;
-      }
-    } catch (e) {
-      console.warn('[Remove Update] Erro em replaceChild:', e.message);
-    }
-    
-    try {
-      return originalReplaceChild.call(this, newChild, oldChild);
-    } catch (e) {
-      console.warn('[Remove Update] Erro ao chamar replaceChild:', e.message);
-      return oldChild;
-    }
-  };
-  
-  // MutationObserver como backup
+  // MutationObserver como backup (mais seguro que interceptar métodos)
   const observer = new MutationObserver(function(mutations) {
     try {
       mutations.forEach(function(mutation) {
@@ -139,7 +80,7 @@
   }
   startObserver();
   
-  // Remoção agressiva a cada 100ms
+  // Remoção agressiva a cada 500ms (menos frequente para não impactar performance)
   setInterval(function() {
     try {
       const elements = document.querySelectorAll('*');
@@ -162,7 +103,7 @@
     } catch (e) {
       console.warn('[Remove Update] Erro na varredura:', e.message);
     }
-  }, 100);
+  }, 500);
   
-  console.log('[Remove Update] Todos os interceptadores ativos!');
+  console.log('[Remove Update] Sistema ativo - usando apenas MutationObserver!');
 })();
