@@ -28,9 +28,9 @@
   "start_url": "/",
   "theme_color": "#e9fbfb",
   "background_color": "#e9fbfb",
-  "display": "standalone",
+  "display": "fullscreen",
   "scope": "/",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "shortcuts": [
     {
       "name": "login",
