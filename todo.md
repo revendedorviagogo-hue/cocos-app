@@ -192,3 +192,13 @@
 - [x] Criar endpoint GET /api/user/identities/logs (visualizar logs)
 - [ ] Testar com telefone
 - [ ] Testar com email
+
+## 🔐 Remover Manus OAuth e Forçar Android Nativo
+- [x] Remover autenticação Manus OAuth do app
+- [x] Remover login com Manus
+- [x] Forçar detecção como Android em TODOS os ambientes
+- [x] Forçar modo mobile mesmo em desktop
+- [x] Adicionar botão "Desvincular Identidades" no menu de Seguridad
+- [x] Implementar modal para desvincular telefone/email
+- [ ] Testar em desktop - deve aparecer como mobile
+- [ ] Testar em mobile - deve aparecer como mobile
