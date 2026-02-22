@@ -1,61 +1,75 @@
 /**
- * PWA NATIVE STYLES
+ * PWA NATIVE STYLES - SEM BLOQUEAR FUNCIONALIDADES
  * 
- * Estilos para fazer o app parecer 100% nativo
+ * Apenas CSS visual para parecer nativo
+ * NÃO bloqueia scroll, gestos, ou qualquer funcionalidade
  */
 
-/* Remover scrollbar do navegador */
+/* Remover scrollbar visual (mas permitir scroll) */
 ::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 8px;
+  height: 8px;
 }
 
-/* Viewport completo */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+/* Reset padrão */
 html, body {
-  width: 100%;
-  height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-}
-
-/* App root ocupa tela inteira */
-#app, #root {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
-/* Permitir scroll dentro do app */
-body {
+/* Permitir scroll normal */
+html, body {
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Remover zoom em inputs */
+/* App root */
+#app, #root {
+  width: 100%;
+  min-height: 100%;
+}
+
+/* Remover highlight em taps (mas permitir gestos) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Permitir user-select e gestos */
+* {
+  -webkit-user-select: auto;
+  user-select: auto;
+  -webkit-touch-callout: default;
+}
+
+/* Permitir zoom em inputs */
 input, textarea, select {
   font-size: 16px;
 }
 
-/* Remover highlight em taps */
-* {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
+/* Permitir outline em inputs */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: auto;
 }
 
-/* Permitir user-select */
-* {
-  -webkit-user-select: auto;
-  user-select: auto;
-}
-
-/* Comportamento de bounce scroll iOS */
+/* Comportamento de scroll normal */
 body {
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
 }
 
-/* Safe area para notch/status bar */
+/* Safe area para notch/status bar (apenas visual) */
 body {
   padding-top: max(0px, env(safe-area-inset-top));
   padding-left: max(0px, env(safe-area-inset-left));
@@ -73,7 +87,7 @@ body {
   }
 }
 
-/* Status bar style */
+/* Color scheme */
 @media (prefers-color-scheme: light) {
   body {
     color-scheme: light;
@@ -86,57 +100,31 @@ body {
   }
 }
 
-/* Prevenir zoom em inputs */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-textarea,
-select {
-  font-size: 16px !important;
-  padding: 10px;
-}
-
-/* Remover outline em inputs */
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-}
-
-/* Gestos nativos */
+/* Permitir todos os gestos nativos */
 body {
-  -webkit-user-select: text;
+  touch-action: auto;
   -webkit-user-select: auto;
   user-select: auto;
 }
 
-/* Swipe gestures */
+/* Permitir swipe gestures */
 * {
   -webkit-touch-callout: default;
   -webkit-user-select: auto;
+  touch-action: auto;
 }
 
-/* Prevenir bounce scroll em alguns casos */
-body {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* Permitir scroll em elementos específicos */
-body > * {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+/* Permitir scroll normal em todos os elementos */
+body, html, div, section, main, article, aside, nav {
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Remover barra de endereço do navegador */
-@supports (viewport-fit: cover) {
-  @viewport {
-    viewport-fit: cover;
-  }
+/* Permitir comportamento normal de scroll */
+body {
+  position: static;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
