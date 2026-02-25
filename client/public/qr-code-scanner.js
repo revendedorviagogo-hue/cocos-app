@@ -26,25 +26,30 @@
       this.isBackCamera = false;
       this.videoElement = null;
       this.isRunning = false;
+      this.stream = null;
     }
 
     async start(options = {}) {
       return new Promise(async (resolve, reject) => {
         try {
-          // Verificar se câmera já está em uso
-          await navigator.mediaDevices.getUserMedia({
+          // Solicitar permissão de câmera com constraints específicas
+          const constraints = {
             audio: !options.disableAudio,
-            video: true
-          }).then(stream => {
-            stream.getTracks().forEach(track => track.stop());
-          }).catch(error => {
-            reject(error);
-          });
+            video: {
+              width: { ideal: options.width || 1280 },
+              height: { ideal: options.height || 720 },
+              facingMode: options.position === 'rear' ? 'environment' : 'user'
+            }
+          };
 
+          // Solicitar acesso à câmera
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          this.stream = stream;
+
+          // Verificar se câmera já está em uso
           const videoElement = document.getElementById('qr-video');
-          const parentElement = document.getElementById(options.parent || 'qr-scanner-modal');
-
           if (videoElement && videoElement.srcObject) {
+            stream.getTracks().forEach(track => track.stop());
             reject({ message: 'camera already started' });
             return;
           }
@@ -65,39 +70,31 @@
             video.setAttribute('autoplay', 'true');
             video.setAttribute('muted', 'true');
             video.setAttribute('playsinline', 'true');
+          } else {
+            video.setAttribute('autoplay', 'true');
+            video.setAttribute('muted', 'true');
+            video.setAttribute('playsinline', 'true');
           }
 
+          const parentElement = document.getElementById(options.parent || 'qr-video-container');
           if (parentElement) {
             parentElement.appendChild(video);
           }
 
-          // Solicitar acesso à câmera
-          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            const constraints = {
-              video: {
-                width: { ideal: options.width || 1280 },
-                height: { ideal: options.height || 720 }
-              }
-            };
+          // Configurar stream
+          video.srcObject = stream;
+          video.play().catch(err => {
+            console.error('Erro ao reproduzir vídeo:', err);
+            reject(err);
+          });
 
-            if (options.position === 'rear') {
-              constraints.video.facingMode = 'environment';
-              this.isBackCamera = true;
-            } else {
-              this.isBackCamera = false;
-            }
+          this.videoElement = video;
+          this.isBackCamera = options.position === 'rear';
+          this.isRunning = true;
+          resolve();
 
-            navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-              video.srcObject = stream;
-              video.play();
-              this.videoElement = video;
-              this.isRunning = true;
-              resolve();
-            }).catch((error) => {
-              reject(error);
-            });
-          }
         } catch (error) {
+          console.error('Erro ao acessar câmera:', error);
           reject(error);
         }
       });
@@ -105,17 +102,22 @@
 
     async stop() {
       return new Promise((resolve) => {
-        if (this.videoElement) {
-          this.videoElement.pause();
-          const tracks = this.videoElement.srcObject.getTracks();
-          for (let i = 0; i < tracks.length; i++) {
-            tracks[i].stop();
+        try {
+          if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
           }
-          this.videoElement.remove();
-          this.videoElement = null;
+          if (this.videoElement) {
+            this.videoElement.pause();
+            this.videoElement.srcObject = null;
+            this.videoElement.remove();
+            this.videoElement = null;
+          }
           this.isRunning = false;
+          resolve();
+        } catch (error) {
+          console.error('Erro ao parar câmera:', error);
+          resolve();
         }
-        resolve();
       });
     }
 
@@ -169,12 +171,14 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
     `;
 
     modal.innerHTML = `
-      <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; padding: 20px;">
+      <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px;">
         <div style="color: white; font-size: 18px; font-weight: bold; text-align: center;">Escanear QR Code</div>
-        <div id="qr-video-container" style="width: 100%; border-radius: 8px; background: black; overflow: hidden;"></div>
+        <div id="qr-video-container" style="width: 100%; aspect-ratio: 1; border-radius: 8px; background: black; overflow: hidden; position: relative;"></div>
         <canvas id="qr-canvas" style="display: none;"></canvas>
         <div style="color: #999; font-size: 14px; text-align: center;">Aponte a câmera para o QR code</div>
         <button id="qr-close-btn" style="padding: 12px 24px; background: #ff4444; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">Fechar</button>
@@ -187,22 +191,31 @@
 
   // Processar frame de vídeo
   function processFrame(canvas, callback) {
-    if (!cameraPreview.videoElement) return false;
+    if (!cameraPreview.videoElement || !cameraPreview.isRunning) return false;
 
-    const ctx = canvas.getContext('2d');
-    const video = cameraPreview.videoElement;
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = window.jsQR(imageData.data, imageData.width, imageData.height);
-    
-    if (code) {
-      callback(code.data);
-      return true;
+    try {
+      const ctx = canvas.getContext('2d');
+      const video = cameraPreview.videoElement;
+      
+      if (video.videoWidth === 0 || video.videoHeight === 0) return false;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      if (window.jsQR) {
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          callback(code.data);
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao processar frame:', error);
     }
     return false;
   }
@@ -223,6 +236,9 @@
       const closeBtn = document.getElementById('qr-close-btn');
       const videoContainer = document.getElementById('qr-video-container');
 
+      // Limpar container
+      videoContainer.innerHTML = '';
+
       // Mostrar modal
       modal.style.display = 'flex';
 
@@ -237,7 +253,18 @@
         });
       } catch (error) {
         console.error('Erro ao iniciar câmera:', error);
-        alert('Não foi possível acessar a câmera. Verifique as permissões.');
+        
+        // Mostrar mensagem de erro
+        let errorMsg = 'Não foi possível acessar a câmera.';
+        if (error.name === 'NotAllowedError') {
+          errorMsg = 'Permissão de câmera negada. Verifique as configurações do navegador.';
+        } else if (error.name === 'NotFoundError') {
+          errorMsg = 'Câmera não encontrada no dispositivo.';
+        } else if (error.name === 'NotReadableError') {
+          errorMsg = 'Câmera está sendo usada por outro aplicativo.';
+        }
+        
+        alert(errorMsg);
         modal.style.display = 'none';
         return;
       }
@@ -284,6 +311,7 @@
 
     } catch (error) {
       console.error('Erro ao abrir scanner:', error);
+      alert('Erro ao abrir scanner de QR code');
     }
   };
 
